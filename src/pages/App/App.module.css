@@ -1,0 +1,43 @@
+.app {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 300px;
+  --sidebar-horizontal-padding: 20px;
+  border-right: 1px solid lightgray;
+  z-index: 1;
+}
+
+.sidebar .contact-title {
+  padding: 10px var(--sidebar-horizontal-padding);
+  font-size: 36px;
+}
+
+.contact-list {
+  flex: 1;
+}
+
+.message-window-wrapper {
+  flex: 1;
+  background: url("../../assets/default-message-window-background.jpg") repeat;
+  background-size: 600px;
+}
+
+.add-contact-btn {
+  align-self: flex-start;
+  margin-left: var(--sidebar-horizontal-padding);
+  background: white;
+  border: none;
+  color: rgb(46, 136, 165);
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.add-contact-btn:hover {
+  color: rgb(102, 201, 235);
+}
