@@ -1,126 +1,132 @@
-import { useState } from "react"
+import React, { useState } from "react"
 import cls from "./MessageWindow.module.css"
-import dummyImg from "../../../../assets/1022-100x100.jpg"
+import CircularProgress from "@mui/material/CircularProgress"
+import DoneIcon from "@mui/icons-material/Done"
+import ErrorIcon from "@mui/icons-material/Error"
+import { useAppStore } from "../../../../store"
+import { selectAppUser } from "../../../../store/appUser"
+import { Contact, Message, TextMessage } from "../../../../store/modeltypes"
 
-
-type User = {
-    id: number,
-    name: string
-    avatarURL: string
+type RowProps = {
+  message: Message
+  className?: string
 }
 
-type TextMessage = {
-    type: "text"
-    text: string
-    user: User
-    id: number
-}
-
-type ImageMessage = {
-    type: "image"
-    imageURL: string
-    user: User
-    id: number
-}
-
-type Message =
-    | TextMessage
-    | ImageMessage
-
-type RowContentProps = {
-    message: Message
-    className?: string
-}
-    
 type TextBubbleProp = {
-    message: TextMessage
-    className?: string
+  message: TextMessage
+  className?: string
 }
 
 function TextBubble({ message, className = "" }: TextBubbleProp) {
-    className += " " + cls["text-bubble"]
+  className += " " + cls["text-bubble"]
 
-    return (
-        <div className={className}>
-            {message.text}
-        </div>
-    )
+  return (
+    <div className={className}>
+      {message.text}
+    </div>
+  )
 }
 
-function RowContent({ message }: RowContentProps) {
-    let className = cls["row-content"]
+function Row({ message, className }: RowProps) {
+  const store = useAppStore()
+  const appUser = selectAppUser(store.getState())
 
-    // TODO zero is just a dummy value
+  className += " " + cls["row"]
 
-    if (message.user.id === 0) {
-        className += " " + cls["my-message"]
-    } else {
-        className += " " + cls["their-message"]
+  let rowContentClassName
+
+  // TODO zero is just a dummy value
+
+  if (message.senderID === appUser!.id) {
+    className += " " + cls["my-message"]
+    rowContentClassName = cls["my-message"]
+  } else {
+    className += " " + cls["their-message"]
+    rowContentClassName = cls["their-message"]
+  }
+
+  let rowContent, messageStatus
+
+  if (message.type === "text") {
+    rowContent = <TextBubble message={message} className={rowContentClassName} />
+  } else {
+    rowContent = <div></div>
+  }
+
+  if (message.senderID === appUser!.id) {
+    switch (message.status) {
+      case "succeeded":
+        messageStatus = <DoneIcon style={{ color: "#007ba8", marginRight: 2 }} fontSize="small" />
+        break
+      case "sending":
+        messageStatus = <CircularProgress style={{ marginRight: 6 }} size={15} />
+        break
+      case "failed":
+        messageStatus = <ErrorIcon style={{ color: "red", marginRight: 2 }} fontSize="small" />
+        break
     }
+  } else {
+    messageStatus = <div></div>
+  }
 
-    if (message.type === "text") {
-        return <TextBubble message={message} className={className}/>
-    } else {
-        return ""
-    }
+  return (
+    <div className={className} key={message.id}>
+      <div className={cls["message-status"]}>{messageStatus}</div>
+      {rowContent}
+    </div>
+  )
 }
 
-export function MessageWindow() {
-    const [their] = useState<User>({
-        id: 1,
-        name: "Guan Tuan",
-        avatarURL: dummyImg
-    })
+type MessageWindowProps = {
+  contact?: Contact,
+  onSendText: (text: string) => void
+}
 
-    const [messageList] = useState<Message[]>([
-        {
-            user: {
-                id: 0,
-                name: "johc",
-                avatarURL: dummyImg
-            },
-            type: "text",
-            text: "hello, valk",
-            id: 0,
-        },
-        {
-            user: {
-                id: 1,
-                name: "valk",
-                avatarURL: dummyImg
-            },
-            type: "text",
-            text: "hello, johc",
-            id: 1,
-        }
-    ])
+export function MessageWindow({ contact, onSendText }: MessageWindowProps) {
+  const [textInput, setTextInput] = useState("")
 
-    const rowElements = messageList.map((msg, index) => {
-        let className = cls["row-content-wrapper"]
-        if (index === 0) className += ` ${cls["first"]}`
+  if (!contact) {
+    return <div className={cls["message-window"]} style={{
+      justifyContent: "center",
+      alignItems: "center"
+    }}>
+      <div className={cls["empty-message-window-prompt"]}>Pick a contact and start messaging.</div>
+    </div>
+  }
 
-        return (
-            <div className={className} key={msg.id}>
-                <RowContent message={msg} />
-            </div>
-        )
-    })
-    
-    return (
-        <div className={cls["message-window"]}>
-            <div className={cls["message-window-header"]}>
-                <div className={cls["message-window-header-content"]}>
-                    <img className={cls["their-avatar-img"]} src={their.avatarURL} />
-                    <span className={cls["their-name"]}>{their.name}</span>
-                </div>
-            </div>
-            <div className={cls["message-list"]}>
-                {rowElements}
-            </div>
-            <div className={cls["message-inputbox"]}>
-                <input type="text" />
-                <button className={cls["sending-button"]}>SEND</button>
-            </div>
+  const messageRows = contact.messages.map((message, index) => {
+    const className = index === 0 ? cls["first"] : ""
+    return <Row message={message} className={className} key={message.id}></Row>
+  })
+
+  return (
+    <div className={cls["message-window"]}>
+      <div className={cls["message-window-header"]}>
+        <div className={cls["message-window-header-content"]}>
+          <img className={cls["their-avatar-img"]} src={contact.user.avatarURL} />
+          <span className={cls["their-name"]}>{contact.user.name}</span>
         </div>
-    ) 
+      </div>
+      <div className={cls["message-list"]}>
+        {messageRows}
+      </div>
+      <form className={cls["message-inputbox"]} onSubmit={handleSendingText}>
+        <input type="text" value={textInput} onChange={handleInputtingText} />
+        <button type="submit" className={cls["sending-button"]}>
+          SEND
+        </button>
+      </form>
+    </div>
+  )
+
+  function handleSendingText(e: React.FormEvent) {
+    e.preventDefault()
+    onSendText(textInput)
+    setTextInput("")
+  }
+
+  function handleInputtingText(e: React.ChangeEvent<HTMLInputElement>) {
+    setTextInput(e.target.value)
+  }
+
 }

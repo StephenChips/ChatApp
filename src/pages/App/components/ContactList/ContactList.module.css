@@ -8,12 +8,25 @@
         13px
         /* defined at App.css */
         var(--sidebar-horizontal-padding);
-}
-
-.contact-list-item-wrapper:hover {
-    background-color: #eee;
     cursor: pointer;
     user-select: none;
+}
+
+.contact-list-item-wrapper:not(.selected):hover {
+    background-color: #eee;
+}
+
+.contact-list-item-wrapper.selected {
+    color: white;
+    background-color: var(--primary-theme-color);
+}
+
+.contact-list-item-wrapper:not(.selected) .sender-name {
+    color: var(--primary-theme-color);
+}
+
+.contact-list-item-wrapper.selected .sender-name {
+    font-weight: bold;
 }
 
 .avatar {
@@ -53,5 +66,12 @@
     grid-area: latestChat;
     text-wrap: nowrap;
     text-overflow: ellipsis;
-    color: #333;
+    color: #767676;
+    font-size: 14px;
 }
+
+.contact-list-item-wrapper.selected .latestChat,
+.contact-list-item-wrapper.selected .latestChatTime {
+    color: unset;
+}
+

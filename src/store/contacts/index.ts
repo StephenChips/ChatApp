@@ -1,46 +1,58 @@
-import { createEntityAdapter, createSlice } from "@reduxjs/toolkit"
+import { createEntityAdapter, createSlice, PayloadAction } from "@reduxjs/toolkit"
 import { RootState } from ".."
-import { selectUserById } from "../users"
-
-export type Contact = {
-  userID: number
-  latestChat: string
-  latestChatTime: string
-}
+import { Contact, Message, User } from "../modeltypes"
 
 const contactsAdapter = createEntityAdapter<Contact, number>({
-  selectId: (contact) => contact.userID,
-  sortComparer: (contact1, contact2) => contact1.userID - contact2.userID
+  selectId: (contact) => contact.user.id,
+  sortComparer: (contact1, contact2) => contact1.user.id - contact2.user.id
 })
 
-const initialState = contactsAdapter.getInitialState(
-  {},
-  {
-    1: {
-      userID: 1,
-      latestChat: "lorem ipsum",
-      latestChatTime: "2024/1/1"
-    }
-  }
-)
+const initialState = contactsAdapter.getInitialState()
 
 const contactsSlice = createSlice({
   name: "contacts",
   initialState,
   reducers: {
-    addContact: contactsAdapter.addOne
+    addContact: contactsAdapter.addOne,
+
+    setAllContacts: contactsAdapter.setAll,
+
+    sendMessage(state, actions: PayloadAction<{
+      contactUserID: User["id"],
+      message: Message
+    }>) {
+      const { contactUserID, message } = actions.payload
+      const contact = state.entities[contactUserID]
+      contact?.messages.push(message)
+    },
+
+    setMessageStatus(state, actions: PayloadAction<{ contactUserID: User["id"], messageID: Message["id"], status: Message["status"] }>) {
+      const { contactUserID, messageID, status } = actions.payload;
+      const contact = state.entities[contactUserID]
+      const message = contact?.messages.find(msg => msg.id === messageID)
+      if (message) {
+        message.status = status
+      }
+    }
   }
 })
 
-export const { addContact } = contactsSlice.actions
+export const { addContact, setAllContacts, sendMessage, setMessageStatus } = contactsSlice.actions
 
 export const {
   selectAll: selectAllContacts,
-  selectById: selectContactsById,
-  selectIds: selectContactsIds
+  selectById: selectContactByUserID,
+  selectIds: selectContactsUserIDs
 } = contactsAdapter.getSelectors<RootState>(state => state.contacts)
 
-export const selectUserByContact = (state: RootState, contact: Contact) =>
-    selectUserById(state, contact.userID)
+export function selectLastChat(state: RootState, contactUserID: User["id"]) {
+  const contact = selectContactByUserID(state, contactUserID)
+  return contact?.messages?.[0]
+}
+
+export function selectLastChatTime(state: RootState, contactUserID: User["id"]) {
+  return selectLastChat(state, contactUserID)?.sendTime
+}
+
 
 export default contactsSlice.reducer
