@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState } from "react"
+import { createContext, useEffect, useRef, useState } from "react"
 
 import cls from "./App.module.css"
 import { AccountInfo } from "./components/AccountInfo/AccountInfo"
@@ -6,13 +6,13 @@ import { SearchBox } from "./components/SearchBox/SearchBox"
 import { ContactList } from "./components/ContactList/ContactList"
 import { MessageWindow } from "./components/MessageWindow/MessageWindow"
 import { initializeStore, useAppDispatch, useAppSelector, useAppStore } from "../../store"
-import { selectAllContacts, selectContactByUserID, sendMessage, setMessageStatus } from "../../store/contacts"
+import { selectAllContacts, selectContactByUserID, sendMessage, setMessageStatus, hasContact } from "../../store/contacts"
 import { Contact, Message, User } from "../../store/modeltypes"
 import { selectAppUser } from "../../store/appUser"
 
 export type MainPageContextType = {
   currentContact?: Contact,
-  setCurrentContact: (contactUserID: User["id"]) => void
+  setCurrentContact: (contactUserID: User["id"] | undefined) => void
 }
 
 export const MainPageContext = createContext<MainPageContextType>({
@@ -28,6 +28,10 @@ export function App() {
     setCurrentContactUserID
   ] = useState<User["id"] | undefined>(undefined)
 
+  const currentContactUserIDRef = useRef<number | undefined>()
+
+  currentContactUserIDRef.current = currentContactUserID
+
   const store = useAppStore()
   const appUser = useAppSelector(state => selectAppUser(state))
   const contacts = useAppSelector(state => selectAllContacts(state))
@@ -38,6 +42,14 @@ export function App() {
 
   useEffect(() => {
     dispatch(initializeStore())
+  }, [])
+
+  useEffect(() => {
+    document.addEventListener("keydown", closeMessageWindowAfterPressingEscape)
+
+    return () => {
+      document.removeEventListener("keydown", closeMessageWindowAfterPressingEscape)
+    }
   }, [])
 
   return (
@@ -58,11 +70,14 @@ export function App() {
           <MessageWindow
             contact={currentContact}
             onSendText={handleSendingText}
+            onCloseMessageWindow={() => setCurrentContact(undefined)}
           />
         </div>
       </div>
     </MainPageContext.Provider>
   )
+
+  /* FUNCTIONS */
 
   async function handleSendingText(text: string) {
     const messageID = currentContact!.messages.length
@@ -102,11 +117,21 @@ export function App() {
     })
   }
 
-  function setCurrentContact(contactUserID: User["id"]) {
-    if (contactUserID === currentContactUserID) return
-    const contact = selectContactByUserID(store.getState(), contactUserID)
-    console.log(contactUserID)
-    if (!contact) return
-    setCurrentContactUserID(contact.user.id)
+  function setCurrentContact(contactUserID: User["id"] | undefined) {
+    if (contactUserID === currentContactUserIDRef.current) return
+    if (contactUserID === undefined) {
+      setCurrentContactUserID(undefined)
+      return
+    }
+    if (hasContact(store.getState(), contactUserID)) {
+      setCurrentContactUserID(contactUserID)
+    }
+  }
+
+  function closeMessageWindowAfterPressingEscape(event: KeyboardEvent) {
+    if (event.key === "Escape") {
+      console.log(event.key)
+      setCurrentContact(undefined)
+    }
   }
 }

@@ -103,7 +103,7 @@ function ContactListItem({ contact }: { contact: Contact }) {
         if (lessThanAMinuteFromNow(date)) {
             latestChatTimeString = "Now"
         } else if (lessThanAnHourFromNow(date)) {
-            latestChatTimeString = `${minuteDiff(date, now)} minute(s) ago`
+            latestChatTimeString = `${minuteDiff(now, date)} minute(s) ago`
         } else if (isInASameDate(date, now)) {
             latestChatTimeString = `${formatHour(date)}:${formatMinute(date)}`
         } else if (isInTheSameYear(date, now)) {

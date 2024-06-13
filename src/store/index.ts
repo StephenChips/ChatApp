@@ -19,11 +19,16 @@ export const useAppDispatch = useDispatch.withTypes<AppDispatch>()
 export const useAppSelector = useSelector.withTypes<RootState>()
 export const useAppStore = useStore.withTypes<AppStore>()
 
+let storeHasInitialized = false
+
 export function initializeStore() : ThunkAction<void, RootState, unknown, UnknownAction> {
   return async function (dispatch, getState) {
+    if (storeHasInitialized) return
     const appUser = selectAppUser(getState())
     const { data } = await axios.post("/api/getContactsWithMessages", { appUserID: appUser?.id })
 
     dispatch(setAllContacts(data))
+
+    storeHasInitialized = true
   }
 }

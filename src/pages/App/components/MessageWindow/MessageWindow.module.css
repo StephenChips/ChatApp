@@ -32,6 +32,10 @@
     font-weight: bold;
 }
 
+.message-window-header-content .buttons {
+    margin-left: auto;
+}
+
 .message-list {
     flex: 1;
     width: var(--message-list-width);

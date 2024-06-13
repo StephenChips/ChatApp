@@ -6,6 +6,8 @@ import ErrorIcon from "@mui/icons-material/Error"
 import { useAppStore } from "../../../../store"
 import { selectAppUser } from "../../../../store/appUser"
 import { Contact, Message, TextMessage } from "../../../../store/modeltypes"
+import { IconButton } from "@mui/material"
+import CloseIcon from "@mui/icons-material/Close"
 
 type RowProps = {
   message: Message
@@ -80,9 +82,10 @@ function Row({ message, className }: RowProps) {
 type MessageWindowProps = {
   contact?: Contact,
   onSendText: (text: string) => void
+  onCloseMessageWindow: () => void
 }
 
-export function MessageWindow({ contact, onSendText }: MessageWindowProps) {
+export function MessageWindow({ contact, onSendText, onCloseMessageWindow }: MessageWindowProps) {
   const [textInput, setTextInput] = useState("")
 
   if (!contact) {
@@ -105,6 +108,11 @@ export function MessageWindow({ contact, onSendText }: MessageWindowProps) {
         <div className={cls["message-window-header-content"]}>
           <img className={cls["their-avatar-img"]} src={contact.user.avatarURL} />
           <span className={cls["their-name"]}>{contact.user.name}</span>
+          <div className={cls["buttons"]}>
+            <IconButton aria-label="close" onClick={onCloseMessageWindow}>
+              <CloseIcon />
+            </IconButton>
+          </div>
         </div>
       </div>
       <div className={cls["message-list"]}>

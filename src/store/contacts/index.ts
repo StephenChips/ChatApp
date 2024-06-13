@@ -54,5 +54,9 @@ export function selectLastChatTime(state: RootState, contactUserID: User["id"]) 
   return selectLastChat(state, contactUserID)?.sendTime
 }
 
+export function hasContact(state: RootState, userID: User["id"]) {
+  return selectContactByUserID(state, userID) !== undefined
+}
+
 
 export default contactsSlice.reducer
