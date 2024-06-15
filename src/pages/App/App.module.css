@@ -13,11 +13,6 @@
   z-index: 1;
 }
 
-.sidebar .contact-title {
-  padding: 10px var(--sidebar-horizontal-padding);
-  font-size: 36px;
-}
-
 .contact-list {
   flex: 1;
 }

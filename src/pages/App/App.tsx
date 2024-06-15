@@ -1,9 +1,5 @@
 import { createContext, useEffect, useRef, useState } from "react"
-import { Box, Button, Dialog, DialogContent, DialogTitle, TextField, Tooltip, Typography } from "@mui/material"
-
 import cls from "./App.module.css"
-import { AccountInfo } from "./components/AccountInfo/AccountInfo"
-import { SearchBox } from "./components/SearchBox/SearchBox"
 import { ContactList } from "./components/ContactList/ContactList"
 import { MessageWindow } from "./components/MessageWindow/MessageWindow"
 import { initializeStore, useAppDispatch, useAppSelector, useAppStore } from "../../store"
@@ -17,11 +13,17 @@ import {
 import { Contact, Message, User } from "../../store/modeltypes"
 import { selectAppUser } from "../../store/appUser"
 import { AddContactDialog } from "./components/AddContactDialog/AddContactDialog"
+import { Box, Button, Typography, IconButton } from "@mui/material"
+import {
+  Add as IconAdd,
+  Settings as IconSettings,
+  Logout as IconLogout
+} from "@mui/icons-material"
 
 export type MainPageContext = {
   currentContact?: Contact,
   setCurrentContact: (contactUserID: User["id"] | undefined) => void,
-  
+
   isAddContactDialogOpen: boolean,
   openAddContactDialog: () => void,
   closeAddContactDialog: () => void
@@ -29,10 +31,10 @@ export type MainPageContext = {
 
 export const MainPageContext = createContext<MainPageContext>({
   currentContact: undefined,
-  setCurrentContact() {},
+  setCurrentContact() { },
   isAddContactDialogOpen: false,
-  openAddContactDialog() {},
-  closeAddContactDialog() {}
+  openAddContactDialog() { },
+  closeAddContactDialog() { }
 })
 
 export function App() {
@@ -57,7 +59,7 @@ export function App() {
     else return selectContactByUserID(state, currentContactUserID)
   })
 
-  const context : MainPageContext = {
+  const context: MainPageContext = {
     currentContact,
     setCurrentContact,
     isAddContactDialogOpen,
@@ -79,28 +81,48 @@ export function App() {
 
   return (
     <MainPageContext.Provider value={context}>
-      <div className={cls.app}>
-        <div className={cls.sidebar}>
-          <div className={cls["contact-title"]}>Contacts</div>
-          <button className={cls["add-contact-btn"]} onClick={openAddContactDialog}>
-            + Add Contact
-          </button>
-          <SearchBox />
+      <div className={cls["app"]}>
+        <div className={cls["sidebar"]}>
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            ml={2}
+            mr={2}
+            mt={2}
+          >
+            <Typography
+              sx={{
+                textTransform: "uppercase",
+              }}
+            >Contacts</Typography>
+            <IconButton color="primary"><IconAdd /></IconButton>
+          </Box>
           <ContactList contacts={contacts} className={cls["contact-list"]} />
-          <AccountInfo />
+          <Box
+            display="flex"
+            justifyContent="end"
+            m={2}
+            mb={1}
+          >
+            <IconButton><IconSettings fontSize="small" /></IconButton>
+            <IconButton><IconLogout fontSize="small" /></IconButton>
+          </Box>
         </div>
 
-        <div className={cls["message-window-wrapper"]}>
+        <Box
+          className={cls["message-window-wrapper"]}
+        >
           <MessageWindow
             contact={currentContact}
             onSendText={handleSendingText}
             onCloseMessageWindow={() => setCurrentContact(undefined)}
           />
-        </div>
+        </Box>
 
         <AddContactDialog />
       </div>
-    </MainPageContext.Provider>
+    </MainPageContext.Provider >
   )
 
   /* FUNCTIONS */
