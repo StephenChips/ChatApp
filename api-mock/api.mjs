@@ -32,4 +32,12 @@ api.post("/getContactsWithMessages", (request, response) => {
   ])
 })
 
+api.post("/searchUser", (request, response) => {
+  response.json({
+    id: 1,
+    name: "John",
+    avatarURL: "https://fastly.picsum.photos/id/903/50/50.jpg?hmac=KOpCpZY7_zRGpVsF5FCfJnWk_f24Cy-5ROIOIDDYN0E"
+  })
+})
+
 export default api
