@@ -13,11 +13,12 @@ import {
 import { Contact, Message, User } from "../../store/modeltypes"
 import { selectAppUser } from "../../store/appUser"
 import { AddContactDialog } from "./components/AddContactDialog/AddContactDialog"
-import { Box, Button, Typography, IconButton } from "@mui/material"
+import { Badge, Box, IconButton } from "@mui/material"
 import {
-  Add as IconAdd,
-  Settings as IconSettings,
-  Logout as IconLogout
+  PersonAdd,
+  Settings,
+  Logout,
+  Notifications
 } from "@mui/icons-material"
 
 export type MainPageContext = {
@@ -37,6 +38,45 @@ export const MainPageContext = createContext<MainPageContext>({
   closeAddContactDialog() { }
 })
 
+type Notification = 
+  | {
+      type: "send add contact request",
+      toUser: User,
+      creationTime: Date,
+      requestStatus: "agreed" | "rejected" | "pending" | "expired"
+    }
+  | {
+      type: "receive add contact request",
+      fromUser: User,
+      creationTime: Date,
+      requestStatus: "agreed" | "rejected" | "pending" | "expired"
+    }
+
+async function fetchNotifications(): Promise<Notification[]> {
+  return [
+    {
+      type: "send add contact request",
+      toUser: {
+        id: 1,
+        name: "John",
+        avatarURL: "https://fastly.picsum.photos/id/903/50/50.jpg?hmac=KOpCpZY7_zRGpVsF5FCfJnWk_f24Cy-5ROIOIDDYN0E"
+      },
+      creationTime: new Date("2020/3/3 11:33:10"),
+      requestStatus: "pending"
+    },
+    {
+      type: "receive add contact request",
+      fromUser: {
+        id: 1,
+        name: "John",
+        avatarURL: "https://fastly.picsum.photos/id/903/50/50.jpg?hmac=KOpCpZY7_zRGpVsF5FCfJnWk_f24Cy-5ROIOIDDYN0E"
+      },
+      creationTime: new Date("2020/3/4 12:10:42"),
+      requestStatus: "pending"
+    }
+  ]
+}
+
 export function App() {
   const dispatch = useAppDispatch()
 
@@ -47,6 +87,7 @@ export function App() {
     isAddContactDialogOpen, setIsAddContactDialogOpen
   ] = useState(false)
 
+  const [notificationList, setNotificationList] = useState<Notification[]>([])
 
   const currentContactUserIDRef = useRef<number | undefined>()
   currentContactUserIDRef.current = currentContactUserID
@@ -79,25 +120,18 @@ export function App() {
     }
   }, [])
 
+  useEffect(() => {
+    (async () => {
+      const notifications = await fetchNotifications()
+      setNotificationList(notifications)
+    })()
+  }, [])
+
   return (
     <MainPageContext.Provider value={context}>
       <div className={cls["app"]}>
         <div className={cls["sidebar"]}>
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            ml={2}
-            mr={2}
-            mt={2}
-          >
-            <Typography
-              sx={{
-                textTransform: "uppercase",
-              }}
-            >Contacts</Typography>
-            <IconButton color="primary"><IconAdd /></IconButton>
-          </Box>
+
           <ContactList contacts={contacts} className={cls["contact-list"]} />
           <Box
             display="flex"
@@ -105,8 +139,20 @@ export function App() {
             m={2}
             mb={1}
           >
-            <IconButton><IconSettings fontSize="small" /></IconButton>
-            <IconButton><IconLogout fontSize="small" /></IconButton>
+            <IconButton sx={{ mr: "auto"}} aria-label="Add Contact" title="Add Contact" onClick={openAddContactDialog}>
+              <PersonAdd color="primary" fontSize="small"></PersonAdd>
+            </IconButton>
+            <IconButton aria-label="System Notifications" title="System Notifications">
+              <Badge color="secondary" badgeContent={notificationList.length}>
+                <Notifications fontSize="small" />
+              </Badge>
+            </IconButton>
+            <IconButton aria-label="Settings" title="Settings">
+              <Settings fontSize="small" />
+            </IconButton>
+            <IconButton aria-label="Logout" title="Logout">
+              <Logout fontSize="small" />
+            </IconButton>
           </Box>
         </div>
 
@@ -119,7 +165,6 @@ export function App() {
             onCloseMessageWindow={() => setCurrentContact(undefined)}
           />
         </Box>
-
         <AddContactDialog />
       </div>
     </MainPageContext.Provider >

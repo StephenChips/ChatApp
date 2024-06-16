@@ -88,6 +88,7 @@ type MessageWindowProps = {
 export function MessageWindow({ contact, onSendText, onCloseMessageWindow }: MessageWindowProps) {
   const [textInput, setTextInput] = useState("")
 
+  console.log(contact)
   if (!contact) {
     return <div className={cls["message-window"]} style={{
       justifyContent: "center",
