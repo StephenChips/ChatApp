@@ -7,7 +7,7 @@ import { useDispatch, useSelector, useStore } from "react-redux"
 export const store = configureStore({
   reducer: {
     contacts: contactsReducer,
-    appUser: appUsersReducer
+    appUser: appUsersReducer,
   }
 })
 
@@ -21,7 +21,7 @@ export const useAppStore = useStore.withTypes<AppStore>()
 
 let storeHasInitialized = false
 
-export function initializeStore() : ThunkAction<void, RootState, unknown, UnknownAction> {
+export function initializeStore(): ThunkAction<void, RootState, unknown, UnknownAction> {
   return async function (dispatch, getState) {
     if (storeHasInitialized) return
     const appUser = selectAppUser(getState())

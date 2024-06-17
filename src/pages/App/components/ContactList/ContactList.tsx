@@ -1,9 +1,8 @@
 import cls from "./ContactList.module.css"
 import { Contact, User } from "../../../../store/modeltypes"
-import { useContext } from "react"
-import { MainPageContext } from "../../App"
 import { useAppSelector } from "../../../../store"
 import { selectAppUser } from "../../../../store/appUser"
+import { useNavigate, useParams } from "react-router"
 
 
 export interface ContactListProps {
@@ -79,7 +78,9 @@ function formatYear(date: Date) {
 
 function ContactListItem({ contact }: { contact: Contact }) {
     const appUser = useAppSelector(selectAppUser) as User
-    const { currentContact, setCurrentContact } = useContext(MainPageContext)
+    const navigate = useNavigate()
+    const { userID } = useParams()
+    const currentContactID = userID === undefined ? undefined : Number(userID)
     const latestChat = contact.messages.length > 0 ? contact.messages[0] : undefined
 
     let shouldShowSenderName = false
@@ -114,7 +115,7 @@ function ContactListItem({ contact }: { contact: Contact }) {
     }
 
     let classNames = cls["contact-list-item-wrapper"]
-    if (currentContact?.user.id === contact.user.id) {
+    if (currentContactID !== undefined && currentContactID === contact.user.id) {
         classNames += " " + cls["selected"]
     }
 
@@ -147,8 +148,8 @@ function ContactListItem({ contact }: { contact: Contact }) {
     )
 
     function onClickListItem() {
-        if (contact.user.id === currentContact?.user.id) return
-        setCurrentContact(contact.user.id)
+        if (contact.user.id === currentContactID) return
+        navigate(`/contact/${contact.user.id}/chat`)
     }
 }
 

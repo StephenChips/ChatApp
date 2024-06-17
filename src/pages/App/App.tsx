@@ -20,6 +20,7 @@ import {
   Logout,
   Notifications
 } from "@mui/icons-material"
+import { Outlet } from "react-router"
 
 export type MainPageContext = {
   currentContact?: Contact,
@@ -93,7 +94,6 @@ export function App() {
   currentContactUserIDRef.current = currentContactUserID
 
   const store = useAppStore()
-  const appUser = useAppSelector(state => selectAppUser(state))
   const contacts = useAppSelector(state => selectAllContacts(state))
   const currentContact: Contact | undefined = useAppSelector(state => {
     if (currentContactUserID === undefined) return undefined
@@ -131,8 +131,6 @@ export function App() {
     <MainPageContext.Provider value={context}>
       <div className={cls["app"]}>
         <div className={cls["sidebar"]}>
-
-          <ContactList contacts={contacts} className={cls["contact-list"]} />
           <Box
             display="flex"
             justifyContent="end"
@@ -154,16 +152,13 @@ export function App() {
               <Logout fontSize="small" />
             </IconButton>
           </Box>
+          <ContactList contacts={contacts} className={cls["contact-list"]} />
         </div>
 
         <Box
           className={cls["message-window-wrapper"]}
         >
-          <MessageWindow
-            contact={currentContact}
-            onSendText={handleSendingText}
-            onCloseMessageWindow={() => setCurrentContact(undefined)}
-          />
+          <Outlet />
         </Box>
         <AddContactDialog />
       </div>
@@ -171,44 +166,6 @@ export function App() {
   )
 
   /* FUNCTIONS */
-
-  async function handleSendingText(text: string) {
-    const messageID = currentContact!.messages.length
-    const message: Message = {
-      id: messageID,
-      type: "text",
-      text,
-      senderID: appUser!.id,
-      sendTime: new Date().toISOString(),
-      status: "sending"
-    }
-
-    dispatch(sendMessage({
-      contactUserID: currentContact!.user.id,
-      message
-    }))
-
-    let status: Message["status"] = "succeeded"
-
-    try {
-      await sendMessageToServer(message)
-    } catch {
-      status = "failed"
-    }
-    dispatch(setMessageStatus({
-      contactUserID: currentContact!.user.id,
-      messageID,
-      status
-    }))
-  }
-
-  async function sendMessageToServer(message: Message) {
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        resolve()
-      }, 1000)
-    })
-  }
 
   function setCurrentContact(contactUserID: User["id"] | undefined) {
     if (contactUserID === currentContactUserIDRef.current) return

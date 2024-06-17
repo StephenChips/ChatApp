@@ -1,6 +1,6 @@
 import { createEntityAdapter, createSlice, PayloadAction } from "@reduxjs/toolkit"
-import { RootState } from ".."
-import { Contact, Message, User } from "../modeltypes"
+import { RootState } from "."
+import { Contact, Message, User } from "./modeltypes"
 
 const contactsAdapter = createEntityAdapter<Contact, number>({
   selectId: (contact) => contact.user.id,

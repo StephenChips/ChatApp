@@ -3,11 +3,13 @@ import cls from "./MessageWindow.module.css"
 import CircularProgress from "@mui/material/CircularProgress"
 import DoneIcon from "@mui/icons-material/Done"
 import ErrorIcon from "@mui/icons-material/Error"
-import { useAppStore } from "../../../../store"
+import { useAppDispatch, useAppSelector, useAppStore } from "../../../../store"
 import { selectAppUser } from "../../../../store/appUser"
-import { Contact, Message, TextMessage } from "../../../../store/modeltypes"
+import { Message, TextMessage } from "../../../../store/modeltypes"
 import { IconButton } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
+import { selectContactByUserID, sendMessage, setMessageStatus } from "../../../../store/contacts"
+import { useNavigate, useParams } from "react-router"
 
 type RowProps = {
   message: Message
@@ -79,17 +81,15 @@ function Row({ message, className }: RowProps) {
   )
 }
 
-type MessageWindowProps = {
-  contact?: Contact,
-  onSendText: (text: string) => void
-  onCloseMessageWindow: () => void
-}
-
-export function MessageWindow({ contact, onSendText, onCloseMessageWindow }: MessageWindowProps) {
+export function MessageWindow() {
+  const appUser = useAppSelector(selectAppUser)
+  const currentContactID = Number(useParams().userID!)
+  const currentContact = useAppSelector((state) => selectContactByUserID(state, currentContactID))
+  const dispatch = useAppDispatch()
+  const navigate = useNavigate()
   const [textInput, setTextInput] = useState("")
 
-  console.log(contact)
-  if (!contact) {
+  if (!currentContact) {
     return <div className={cls["message-window"]} style={{
       justifyContent: "center",
       alignItems: "center"
@@ -98,7 +98,7 @@ export function MessageWindow({ contact, onSendText, onCloseMessageWindow }: Mes
     </div>
   }
 
-  const messageRows = contact.messages.map((message, index) => {
+  const messageRows = currentContact.messages.map((message, index) => {
     const className = index === 0 ? cls["first"] : ""
     return <Row message={message} className={className} key={message.id}></Row>
   })
@@ -107,8 +107,8 @@ export function MessageWindow({ contact, onSendText, onCloseMessageWindow }: Mes
     <div className={cls["message-window"]}>
       <div className={cls["message-window-header"]}>
         <div className={cls["message-window-header-content"]}>
-          <img className={cls["their-avatar-img"]} src={contact.user.avatarURL} />
-          <span className={cls["their-name"]}>{contact.user.name}</span>
+          <img className={cls["their-avatar-img"]} src={currentContact.user.avatarURL} />
+          <span className={cls["their-name"]}>{currentContact.user.name}</span>
           <div className={cls["buttons"]}>
             <IconButton aria-label="close" onClick={onCloseMessageWindow}>
               <CloseIcon />
@@ -128,14 +128,54 @@ export function MessageWindow({ contact, onSendText, onCloseMessageWindow }: Mes
     </div>
   )
 
-  function handleSendingText(e: React.FormEvent) {
-    e.preventDefault()
-    onSendText(textInput)
-    setTextInput("")
-  }
-
   function handleInputtingText(e: React.ChangeEvent<HTMLInputElement>) {
     setTextInput(e.target.value)
   }
 
+  async function handleSendingText(e: React.FormEvent) {
+    e.preventDefault()
+
+    const messageID = currentContact!.messages.length
+    const message: Message = {
+      id: messageID,
+      type: "text",
+      text: textInput,
+      senderID: appUser!.id,
+      sendTime: new Date().toISOString(),
+      status: "sending"
+    }
+
+    dispatch(sendMessage({
+      contactUserID: currentContact!.user.id,
+      message
+    }))
+
+    let status: Message["status"] = "succeeded"
+
+    try {
+      await sendMessageToServer(message)
+    } catch {
+      status = "failed"
+    }
+    dispatch(setMessageStatus({
+      contactUserID: currentContact!.user.id,
+      messageID,
+      status
+    }))
+
+    setTextInput("")
+  }
+
+  async function sendMessageToServer(message: Message) {
+    return new Promise<void>((resolve) => {
+      setTimeout(() => {
+        console.log(message)
+        resolve()
+      }, 1000)
+    })
+  }
+
+  function onCloseMessageWindow() {
+    navigate("/")
+  }
 }
