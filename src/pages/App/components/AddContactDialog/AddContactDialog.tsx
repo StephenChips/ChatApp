@@ -15,7 +15,6 @@ import PersonAddIcon from "@mui/icons-material/PersonAdd"
 import { useContext, useState, useEffect } from "react"
 import { MainPageContext } from "../../App"
 import { User } from "../../../../store/modeltypes"
-import axios from "axios"
 
 type SearchResult =
   | { status: "searching" }
@@ -172,8 +171,7 @@ export function AddContactDialog() {
     setSearchResult({ status: "searching" })
 
     try {
-      const response = await axios.post("/api/searchUser", { id: textFieldValue })
-      const user = response.data as User | undefined
+      const user = await searchUser()
       setSearchResult({ status: "search completed", user })
     } catch (e) {
       console.error(e)
@@ -189,6 +187,14 @@ export function AddContactDialog() {
     setTextFieldValue("")
     setIsSearchResultVisible(false)
     tooltip.close()
+  }
+
+  async function searchUser() {
+    return {
+      id: 1,
+      name: "John",
+      avatarURL: "https://fastly.picsum.photos/id/903/50/50.jpg?hmac=KOpCpZY7_zRGpVsF5FCfJnWk_f24Cy-5ROIOIDDYN0E"
+    }
   }
 }
 

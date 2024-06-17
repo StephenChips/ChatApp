@@ -1,4 +1,4 @@
-import axios from "axios"
+
 import { configureStore, ThunkAction, UnknownAction } from "@reduxjs/toolkit"
 import contactsReducer, { setAllContacts } from "./contacts"
 import appUsersReducer, { selectAppUser } from "./appUser"
@@ -21,13 +21,41 @@ export const useAppStore = useStore.withTypes<AppStore>()
 
 let storeHasInitialized = false
 
+export function getContactsWithMessages() {
+  return [
+    {
+      user: {
+        id: 1,
+        name: "John",
+        avatarURL: "https://fastly.picsum.photos/id/903/50/50.jpg?hmac=KOpCpZY7_zRGpVsF5FCfJnWk_f24Cy-5ROIOIDDYN0E"
+      },
+      messages: []
+    },
+    {
+      user: {  
+        id: 2,
+        name: "Jack",
+        avatarURL: "https://fastly.picsum.photos/id/174/50/50.jpg?hmac=mW6r1Zub6FvIFJsQBfPRVHD6r1n980M8y7kpNQ3scFI"
+      },
+      messages: []
+    },
+    {
+      user: {  
+        id: 3,
+        name: "Paul",
+        avatarURL: "https://fastly.picsum.photos/id/649/50/50.jpg?hmac=1DvRtR-LwNXehtjiit4CTZU6D6nXcN_aI6TqMwkw8PU"
+      },
+      messages: []
+    },
+  ]
+}
+
 export function initializeStore(): ThunkAction<void, RootState, unknown, UnknownAction> {
   return async function (dispatch, getState) {
     if (storeHasInitialized) return
-    const appUser = selectAppUser(getState())
-    const { data } = await axios.post("/api/getContactsWithMessages", { appUserID: appUser?.id })
+    const contacts = await getContactsWithMessages()
 
-    dispatch(setAllContacts(data))
+    dispatch(setAllContacts(contacts))
 
     storeHasInitialized = true
   }
