@@ -32,3 +32,24 @@ export type Contact = {
   user: User
   messages: Message[]
 }
+
+type CommonNotificationProps = {
+  id: number
+  creationTime: string // UTC time in ISO format
+}
+
+export type RequestStatus = "agreed" | "rejected" | "pending" | "expired"
+
+export type AddContactRequest = {
+  id: number,
+  fromUser: User,
+  toUser: User,
+  requestStatus: RequestStatus
+}
+
+export type AddContactRequestNotification = CommonNotificationProps & {
+  type: "add contact request",
+  request: AddContactRequest
+}
+
+export type Notification = AddContactRequestNotification
