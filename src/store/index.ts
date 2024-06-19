@@ -2,7 +2,7 @@
 import { configureStore, ThunkAction, UnknownAction } from "@reduxjs/toolkit"
 import contactsReducer, { setAllContacts } from "./contacts"
 import appUsersReducer from "./appUser"
-import notificationsReducer, { setAllNotifications } from "./notifications"
+import notificationsReducer, { NotificationActions } from "./notifications"
 import { useDispatch, useSelector, useStore } from "react-redux"
 import { Contact, Notification } from "./modeltypes"
 
@@ -104,7 +104,11 @@ export function initializeStore(): ThunkAction<void, RootState, unknown, Unknown
     const notifications = await fetchNotifications()
 
     dispatch(setAllContacts(contacts))
-    dispatch(setAllNotifications(notifications))
+    dispatch(NotificationActions.initialze({
+      notifications,
+      unreadNotificationIDs: notifications.map(notifications => notifications.id),
+      newNotificationIDs: notifications.map(notifications => notifications.id)
+    }))
 
     storeHasInitialized = true
   }

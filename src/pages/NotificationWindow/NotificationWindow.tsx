@@ -3,13 +3,16 @@ import { Close } from "@mui/icons-material"
 import { Box, Button, IconButton, Typography } from "@mui/material"
 import { useNavigate } from "react-router"
 import { useAppDispatch, useAppSelector } from "../../store"
-import { selectAllNotifications, setOneNotification } from "../../store/notifications"
+import { selectAllNotifications, NotificationActions, isNotificationNew } from "../../store/notifications"
 import { AddContactRequestNotification, Notification, RequestStatus } from "../../store/modeltypes"
 import { selectAppUser } from "../../store/appUser"
+import { useEffect } from "react"
 
-function NotificationView({ notification }: { notification: Notification }) {
+function NotificationItem({ notification }: { notification: Notification }) {
   const dispatch = useAppDispatch()
   const appUser = useAppSelector(selectAppUser)!
+  const isNew = useAppSelector(state => isNotificationNew(state, notification))
+
   let notificationMessage: JSX.Element
   let statusElement: JSX.Element | null = null
 
@@ -85,7 +88,10 @@ function NotificationView({ notification }: { notification: Notification }) {
       marginX: 8,
       marginY: 2
     }}>
-      <Typography variant="body2" color="grey"> {format(notification.creationTime, "Pp")}</Typography>
+      <div>
+        {isNew ? <Typography variant="overline" color="green">NEW NOTIFICATION</Typography> : null}
+        <Typography display="inline" variant="body2" color="grey"> {format(notification.creationTime, "Pp")}</Typography>
+      </div>
       <Box display="flex" justifyContent="space-between" alignItems="center" minHeight="40px">
         {notificationMessage}
         {statusElement}
@@ -97,13 +103,15 @@ function NotificationView({ notification }: { notification: Notification }) {
     notification: AddContactRequestNotification,
     newStatus: RequestStatus
   ) {
-    dispatch(setOneNotification({
+    const newNotification: AddContactRequestNotification = {
       ...notification,
       request: {
         ...notification.request,
         requestStatus: newStatus
       }
-    }))
+    }
+
+    dispatch(NotificationActions.setOne(newNotification))
   }
 }
 
@@ -112,7 +120,7 @@ function NotificationList({ notifications }: {
 }) {
   return (
     <Box>
-      {notifications.map(notification => <NotificationView notification={notification} key={notification.id} />)}
+      {notifications.map(notification => <NotificationItem notification={notification} key={notification.id} />)}
     </Box>
   )
 }
@@ -120,6 +128,23 @@ function NotificationList({ notifications }: {
 export function NotificationWindow() {
   const navigate = useNavigate()
   const notifications = useAppSelector(selectAllNotifications)
+  const dispatch = useAppDispatch()
+
+  /*
+   * TODO: use connnected-react-router to implement this features.
+
+   * The requirement is when user enters this page, all notification should be marked as readed, so that the number badge on the sidebar's notification button that will enter this page when clicked should be dismissed.
+   * However user can still see which notifications are new, though they have been read. When user leave this page, those new notifications should no longer be new.
+   * 
+   * Following code breaks React's strict mode. When entering the page, the user can't see which notifications are new, because the page has been reloaded once and those new notifications has been set as not new.
+   * From a user's prespective, this is not a ideal implementation, for when a user merely refreshes the page, not leaving, the new notifications should've remain new, but they have been set as not new anyway.
+   */
+  useEffect(() => {
+    dispatch(NotificationActions.readAll())
+    return () => {
+      dispatch(NotificationActions.clearNew())
+    }
+  })
 
   return (
     <Box

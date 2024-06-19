@@ -16,8 +16,7 @@ import {
   Logout,
   Notifications
 } from "@mui/icons-material"
-import { Outlet, useNavigate } from "react-router"
-import { selectTotalOfNotifications } from "../../store/notifications"
+import { Outlet, useNavigate, useNavigation } from "react-router"
 
 export type MainPageContext = {
   currentContact?: Contact,
@@ -40,6 +39,10 @@ export function App() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
 
+  const navigation = useNavigation()
+
+  console.log(navigation)
+
   const [
     currentContactUserID, setCurrentContactUserID
   ] = useState<User["id"] | undefined>(undefined)
@@ -55,6 +58,10 @@ export function App() {
   const currentContact: Contact | undefined = useAppSelector(state => {
     if (currentContactUserID === undefined) return undefined
     else return selectContactByUserID(state, currentContactUserID)
+  })
+
+  const numberOfUnreadNotifications = useAppSelector((state) => {
+    return state.notifications.unreadNotificationIDs.length
   })
 
   const context: MainPageContext = {
@@ -91,7 +98,9 @@ export function App() {
               <PersonAdd color="primary" fontSize="small"></PersonAdd>
             </IconButton>
             <IconButton aria-label="System Notifications" title="System Notifications" onClick={() => navigate("/notifications")}>
-              <Notifications fontSize="small" />
+              <Badge badgeContent={numberOfUnreadNotifications} color="primary">
+                <Notifications fontSize="small" />
+              </Badge>
             </IconButton>
             <IconButton aria-label="Settings" title="Settings">
               <Settings fontSize="small" />
@@ -128,7 +137,6 @@ export function App() {
 
   function closeMessageWindowAfterPressingEscape(event: KeyboardEvent) {
     if (event.key === "Escape") {
-      console.log(event.key)
       setCurrentContact(undefined)
     }
   }
@@ -141,3 +149,4 @@ export function App() {
     setIsAddContactDialogOpen(true)
   }
 }
+
