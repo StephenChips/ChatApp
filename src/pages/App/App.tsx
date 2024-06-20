@@ -130,9 +130,7 @@ export function App() {
           <ContactList contacts={contacts} className={cls["contact-list"]} />
         </div>
 
-        <Box
-          className={cls["message-window-wrapper"]}
-        >
+        <Box className={cls["router-outlet-wrapper"]}>
           <Outlet />
         </Box>
         <AddContactDialog />
