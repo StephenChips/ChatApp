@@ -16,7 +16,8 @@ import {
   Logout,
   Notifications
 } from "@mui/icons-material"
-import { Outlet, useNavigate, useNavigation } from "react-router"
+import { Outlet, useLocation, useNavigate, type Location } from "react-router"
+import { NotificationActions } from "../../store/notifications"
 
 export type MainPageContext = {
   currentContact?: Contact,
@@ -35,13 +36,30 @@ export const MainPageContext = createContext<MainPageContext>({
   closeAddContactDialog() { }
 })
 
+function useLocationChange(onLocationChange: (previousLocation: Location | undefined, currentLocation: Location) => void) {
+  const previousLocation = useRef<Location | undefined>()
+  const location = useLocation()
+
+  useEffect(() => {
+    onLocationChange(previousLocation.current, location)
+    previousLocation.current = location
+  }, [location, onLocationChange])
+}
+
 export function App() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
 
-  const navigation = useNavigation()
-
-  console.log(navigation)
+  useLocationChange((previousLocation, currentLocation) => {
+    if (previousLocation?.pathname === currentLocation?.pathname) return
+    if (previousLocation?.pathname === "/notifications") {
+      // When we've left the notification 
+      dispatch(NotificationActions.clearNew())
+    } else if (currentLocation.pathname === "/notifications") {
+      // When we've entered the notification page
+      dispatch(NotificationActions.readAll())
+    }
+  })
 
   const [
     currentContactUserID, setCurrentContactUserID
@@ -94,7 +112,7 @@ export function App() {
             m={2}
             mb={1}
           >
-            <IconButton sx={{ mr: "auto"}} aria-label="Add Contact" title="Add Contact" onClick={openAddContactDialog}>
+            <IconButton sx={{ mr: "auto" }} aria-label="Add Contact" title="Add Contact" onClick={openAddContactDialog}>
               <PersonAdd color="primary" fontSize="small"></PersonAdd>
             </IconButton>
             <IconButton aria-label="System Notifications" title="System Notifications" onClick={() => navigate("/notifications")}>

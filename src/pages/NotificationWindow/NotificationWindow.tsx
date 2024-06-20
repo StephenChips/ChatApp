@@ -1,7 +1,7 @@
 import { format } from "date-fns"
 import { Close } from "@mui/icons-material"
 import { Box, Button, IconButton, Typography } from "@mui/material"
-import { useNavigate } from "react-router"
+import { useLocation, useNavigate } from "react-router"
 import { useAppDispatch, useAppSelector } from "../../store"
 import { selectAllNotifications, NotificationActions, isNotificationNew } from "../../store/notifications"
 import { AddContactRequestNotification, Notification, RequestStatus } from "../../store/modeltypes"
@@ -128,23 +128,6 @@ function NotificationList({ notifications }: {
 export function NotificationWindow() {
   const navigate = useNavigate()
   const notifications = useAppSelector(selectAllNotifications)
-  const dispatch = useAppDispatch()
-
-  /*
-   * TODO: use connnected-react-router to implement this features.
-
-   * The requirement is when user enters this page, all notification should be marked as readed, so that the number badge on the sidebar's notification button that will enter this page when clicked should be dismissed.
-   * However user can still see which notifications are new, though they have been read. When user leave this page, those new notifications should no longer be new.
-   * 
-   * Following code breaks React's strict mode. When entering the page, the user can't see which notifications are new, because the page has been reloaded once and those new notifications has been set as not new.
-   * From a user's prespective, this is not a ideal implementation, for when a user merely refreshes the page, not leaving, the new notifications should've remain new, but they have been set as not new anyway.
-   */
-  useEffect(() => {
-    dispatch(NotificationActions.readAll())
-    return () => {
-      dispatch(NotificationActions.clearNew())
-    }
-  })
 
   return (
     <Box
