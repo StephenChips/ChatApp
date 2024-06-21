@@ -3,6 +3,7 @@ import { configureStore, ThunkAction, UnknownAction } from "@reduxjs/toolkit"
 import contactsReducer, { setAllContacts } from "./contacts"
 import appUsersReducer from "./appUser"
 import notificationsReducer, { NotificationActions } from "./notifications"
+import deleteUserDialog from "./deleteUserDialog"
 import { useDispatch, useSelector, useStore } from "react-redux"
 import { Contact, Notification } from "./modeltypes"
 
@@ -10,7 +11,8 @@ export const store = configureStore({
   reducer: {
     contacts: contactsReducer,
     appUser: appUsersReducer,
-    notifications: notificationsReducer
+    notifications: notificationsReducer,
+    deleteUserDialog: deleteUserDialog
   }
 })
 

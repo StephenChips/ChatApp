@@ -14,6 +14,7 @@ const contactsSlice = createSlice({
   initialState,
   reducers: {
     addContact: contactsAdapter.addOne,
+    deleteContact: contactsAdapter.removeOne,
 
     setAllContacts: contactsAdapter.setAll,
 
@@ -37,7 +38,13 @@ const contactsSlice = createSlice({
   }
 })
 
-export const { addContact, setAllContacts, sendMessage, setMessageStatus } = contactsSlice.actions
+export const {
+  deleteContact,
+  addContact,
+  setAllContacts,
+  sendMessage,
+  setMessageStatus
+} = contactsSlice.actions
 
 export const {
   selectAll: selectAllContacts,

@@ -1,13 +1,17 @@
 import cls from "./ContactList.module.css"
-import { Contact, User } from "../../../../store/modeltypes"
-import { useAppSelector } from "../../../../store"
+import { Contact } from "../../../../store/modeltypes"
+import { useAppDispatch, useAppSelector } from "../../../../store"
 import { selectAppUser } from "../../../../store/appUser"
 import { useNavigate, useParams } from "react-router"
+import { ListItemIcon, Menu, MenuItem } from "@mui/material"
+import { Delete } from "@mui/icons-material"
+import React from "react"
+import { DeleteUserDialogActions } from "../../../../store/deleteUserDialog"
 
 
 export interface ContactListProps {
     contacts: Contact[],
-    className?: string 
+    className?: string
 }
 
 const MS_IN_A_MINUTE = 60000
@@ -31,7 +35,7 @@ function formatMinute(date: Date) {
 
 function minuteDiff(d1: Date, d2: Date): number {
     const timeDiff = d1.getTime() - d2.getTime()
-    return Math.floor(timeDiff / MS_IN_A_MINUTE) 
+    return Math.floor(timeDiff / MS_IN_A_MINUTE)
 }
 
 function formatDateOfMonth(date: Date) {
@@ -77,7 +81,8 @@ function formatYear(date: Date) {
 }
 
 function ContactListItem({ contact }: { contact: Contact }) {
-    const appUser = useAppSelector(selectAppUser) as User
+    const appUser = useAppSelector(selectAppUser)!
+    const dispatch = useAppDispatch()
     const navigate = useNavigate()
     const { userID } = useParams()
     const currentContactID = userID === undefined ? undefined : Number(userID)
@@ -86,6 +91,11 @@ function ContactListItem({ contact }: { contact: Contact }) {
     let shouldShowSenderName = false
     let latestChatText = "[No messages]"
     let latestChatTimeString = ""
+
+    const [contextMenu, setContextMenu] = React.useState<{
+        left: number;
+        top: number;
+    } | undefined>(undefined);
 
     if (latestChat) {
         if (latestChat.senderID === appUser.id) {
@@ -100,7 +110,7 @@ function ContactListItem({ contact }: { contact: Contact }) {
 
         const date = new Date(latestChat.sendTime)
         const now = new Date()
-        
+
         if (lessThanAMinuteFromNow(date)) {
             latestChatTimeString = "Now"
         } else if (lessThanAnHourFromNow(date)) {
@@ -123,6 +133,8 @@ function ContactListItem({ contact }: { contact: Contact }) {
         <div
             className={classNames}
             onClick={onClickListItem}
+            onContextMenu={openContextMenu}
+            style={{ cursor: "context-menu" }}
         >
             <img
                 className={cls.avatar}
@@ -144,23 +156,67 @@ function ContactListItem({ contact }: { contact: Contact }) {
                     {latestChatTimeString}
                 </div>
             </div>
+            <Menu
+                open={contextMenu !== undefined}
+                onClose={closeContextMenu}
+                anchorReference="anchorPosition"
+                anchorPosition={
+                    contextMenu !== undefined
+                        ? contextMenu
+                        : undefined
+                }
+            >
+                <MenuItem onClick={deleteContact}>
+                    <ListItemIcon>
+                        <Delete fontSize="small" />
+                    </ListItemIcon>
+                    Delete Contact
+                </MenuItem>
+            </Menu>
         </div>
     )
+
+    function closeContextMenu() {
+        setContextMenu(undefined);
+    }
+
+    function openContextMenu(event: React.MouseEvent) {
+        event.preventDefault();
+        setContextMenu(
+            contextMenu === undefined
+                ? {
+                    left: event.clientX + 2,
+                    top: event.clientY - 6,
+                }
+                : // repeated contextmenu when it is already open closes it with Chrome 84 on Ubuntu
+                // Other native context menus might behave different.
+                // With this behavior we prevent contextmenu from the backdrop to re-locale existing context menus.
+                undefined,
+        );
+    }
 
     function onClickListItem() {
         if (contact.user.id === currentContactID) return
         navigate(`/contact/${contact.user.id}/chat`)
     }
+
+    function deleteContact() {
+        closeContextMenu()
+        dispatch(DeleteUserDialogActions.confirming(contact.user))
+    }
 }
 
-export function ContactList({ contacts, className = "" } : ContactListProps) {
+export function ContactList({ contacts, className = "" }: ContactListProps) {
     const contactListElements = contacts.map(contact => (
-        <ContactListItem contact={contact} key={contact.user.id} />
+        <ContactListItem
+            key={contact.user.id}
+            contact={contact}
+        />
     ))
-
     return (
         <div className={className + ` ${cls["contact-list-wrapper"]}`}>
             {contactListElements}
         </div>
     )
 }
+

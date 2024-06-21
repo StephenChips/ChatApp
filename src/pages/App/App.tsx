@@ -5,19 +5,22 @@ import { initializeStore, useAppDispatch, useAppSelector, useAppStore } from "..
 import {
   selectAllContacts,
   selectContactByUserID,
-  hasContact
+  hasContact,
+  deleteContact
 } from "../../store/contacts"
 import { Contact, User } from "../../store/modeltypes"
 import { AddContactDialog } from "./components/AddContactDialog/AddContactDialog"
-import { Badge, Box, IconButton } from "@mui/material"
+import { Badge, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Typography } from "@mui/material"
 import {
   PersonAdd,
   Settings,
   Logout,
-  Notifications
+  Notifications,
+  Check
 } from "@mui/icons-material"
 import { Outlet, useLocation, useNavigate, type Location } from "react-router"
 import { NotificationActions } from "../../store/notifications"
+import { DeleteUserDialogActions } from "../../store/deleteUserDialog"
 
 export type MainPageContext = {
   currentContact?: Contact,
@@ -134,6 +137,7 @@ export function App() {
           <Outlet />
         </Box>
         <AddContactDialog />
+        <DeleteUserConfirmDialog />
       </div>
     </MainPageContext.Provider>
   )
@@ -166,3 +170,109 @@ export function App() {
   }
 }
 
+function DeleteUserConfirmDialog() {
+  const dispatch = useAppDispatch()
+  const dialog = useAppSelector((state) => state.deleteUserDialog)
+  const TRANSITION_MS = "300ms"
+
+  if (dialog.status === "hidden") {
+    return <Dialog open={false}></Dialog>
+  }
+
+  let dialogActions
+  let informingText
+
+  if (dialog.status === "confirming") {
+    dialogActions = <>
+      <Button color="warning" onClick={() => confirm(dialog.user)}>Delete</Button>
+      <Button onClick={closeDialog}>Cancel</Button>
+    </>
+  } else if (dialog.status === "succeeded") {
+    dialogActions = <Button onClick={closeDialog}>Close</Button>
+  }
+
+  if (dialog.status === "confirming") {
+    informingText = <>
+      <Typography>
+        Are you sure to delete this contact?&nbsp;
+        <span style={{ fontWeight: "bold" }}>This will delete all messages and is irreversible.</span>
+      </Typography>
+    </>
+  } else if (dialog.status === "succeeded") {
+    informingText = <>
+      <Box display="flex" alignItems="center">
+        <Check sx={{
+          marginRight: 1,
+          color: "green"
+        }} />
+        This user has been deleted from your contact.
+      </Box>
+    </>
+  }
+
+  return (
+    <>
+      <Dialog
+        open
+        onClose={closeDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Delete Contact
+        </DialogTitle>
+        <DialogContent>
+          <Box
+            padding={2}
+            display="flex"
+            alignItems="center"
+            border="1px solid #ddd"
+            marginBottom={1}
+            marginTop={1}
+            borderRadius="9px"
+          >
+            <img
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "20px"
+              }}
+              src={dialog.user.avatarURL}
+            />
+
+            <Box fontSize="18px" marginLeft={1}>
+              <span style={{
+                fontSize: "18px",
+                fontWeight: "bold"
+              }}>{dialog.user.name}</span>
+            </Box>
+            <Box fontSize="16px" marginLeft={1}>
+              #{dialog.user.id}
+            </Box>
+            <Box marginLeft="auto" fontWeight="bold" color="success.main" sx={{
+              opacity: dialog.status === "succeeded" ? "1" : "0",
+              transition: `opacity ${TRANSITION_MS}`
+            }}>DELETED</Box>
+          </Box>
+          {informingText}
+        </DialogContent>
+        <DialogActions>
+          {dialogActions}
+        </DialogActions>
+      </Dialog>
+    </>
+
+  )
+
+  function confirm(user: User) {
+    // Adds async action here, and pop up alert to inform users
+    // that the action is suceeeded or failed.
+
+    dispatch(deleteContact(user.id))
+    dispatch(DeleteUserDialogActions.succeeded(user))
+  }
+
+  function closeDialog() {
+    dispatch(DeleteUserDialogActions.hide())
+  }
+}
