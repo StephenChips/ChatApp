@@ -1,24 +1,22 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit"
-import { User } from "./modeltypes"
-
-
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { User } from "./modeltypes";
 
 type DeleteUserConfirmDialogState =
   | {
-    status: "hidden"
-  }
+      status: "hidden";
+    }
   | {
-    status: "confirming",
-    user: User
-  }
+      status: "confirming";
+      user: User;
+    }
   | {
-    status: "succeeded",
-    user: User
-  }
+      status: "succeeded";
+      user: User;
+    };
 
 const initialState: DeleteUserConfirmDialogState = {
-  status: "hidden"
-}
+  status: "hidden",
+};
 
 const slice = createSlice({
   name: "popovers",
@@ -27,23 +25,23 @@ const slice = createSlice({
     confirming(_state, { payload: user }: PayloadAction<User>) {
       return {
         status: "confirming",
-        user
-      }
+        user,
+      };
     },
     succeeded(_state, { payload: user }: PayloadAction<User>) {
       return {
         status: "succeeded",
-        user
-      }
+        user,
+      };
     },
     hide() {
       return {
-        status: "hidden"
-      }
-    }
-  }
-})
+        status: "hidden",
+      };
+    },
+  },
+});
 
-export const DeleteUserDialogActions = slice.actions
+export const DeleteUserDialogActions = slice.actions;
 
-export default slice.reducer
+export default slice.reducer;
