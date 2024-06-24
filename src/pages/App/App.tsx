@@ -29,7 +29,6 @@ import {
 import {
   PersonAdd,
   AccountCircle,
-  Logout,
   Notifications,
   Check,
 } from "@mui/icons-material";
@@ -140,6 +139,13 @@ export function App() {
               <PersonAdd color="primary" fontSize="small"></PersonAdd>
             </IconButton>
             <IconButton
+              aria-label="Account Settings"
+              title="Account Settings"
+              onClick={() => navigate("/account")}
+            >
+              <AccountCircle fontSize="small" />
+            </IconButton>
+            <IconButton
               aria-label="System Notifications"
               title="System Notifications"
               onClick={() => navigate("/notifications")}
@@ -147,16 +153,6 @@ export function App() {
               <Badge badgeContent={numberOfUnreadNotifications} color="primary">
                 <Notifications fontSize="small" />
               </Badge>
-            </IconButton>
-            <IconButton
-              aria-label="Account Settings"
-              title="Account Settings"
-              onClick={() => navigate("/account")}
-            >
-              <AccountCircle fontSize="small" />
-            </IconButton>
-            <IconButton aria-label="Logout" title="Logout">
-              <Logout fontSize="small" />
             </IconButton>
           </Box>
           <ContactList contacts={contacts} className={cls["contact-list"]} />
