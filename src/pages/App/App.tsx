@@ -35,6 +35,7 @@ import {
 import { Outlet, useLocation, useNavigate, type Location } from "react-router";
 import { NotificationActions } from "../../store/notifications";
 import { DeleteUserDialogActions } from "../../store/deleteUserDialog";
+import { AppAlert } from "./components/AppAlert/AppAlert";
 
 export type MainPageContext = {
   currentContact?: Contact;
@@ -127,6 +128,7 @@ export function App() {
 
   return (
     <MainPageContext.Provider value={context}>
+      <AppAlert style={{ width: "100%" }} />
       <div className={cls["app"]}>
         <div className={cls["sidebar"]}>
           <Box display="flex" justifyContent="end" m={2} mb={1}>
@@ -155,6 +157,7 @@ export function App() {
               </Badge>
             </IconButton>
           </Box>
+
           <ContactList contacts={contacts} className={cls["contact-list"]} />
         </div>
 

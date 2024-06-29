@@ -22,8 +22,8 @@ import {
 } from "@mui/material";
 import { ArrowForward, Close, Delete, Logout } from "@mui/icons-material";
 import { useNavigate } from "react-router";
-import { useAppSelector } from "../../store";
-import { selectAppUser } from "../../store/appUser";
+import { useAppDispatch, useAppSelector } from "../../store";
+import { selectAppUser, setAppUser } from "../../store/appUser";
 import { useEffect, useState } from "react";
 
 import avatar1 from "../../assets/avatar1.svg";
@@ -33,10 +33,11 @@ import avatar4 from "../../assets/avatar4.svg";
 import avatar5 from "../../assets/avatar5.svg";
 import avatar6 from "../../assets/avatar6.svg";
 import avatar7 from "../../assets/avatar7.svg";
-
+import { AppAlertActions } from "../../store/appAlert";
 export function Account() {
   const appUser = useAppSelector(selectAppUser)!;
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
 
   const [isChangingUsername, setIsChangingUsername] = useState(false);
   const [isChangingAvatar, setIsChangingAvatar] = useState(false);
@@ -129,17 +130,72 @@ export function Account() {
     navigate("/login");
   }
 
-  function onSubmitUsernameChanged(newUsername: string) {
+  async function onSubmitUsernameChanged(newUsername: string) {
     setIsChangingUsername(false);
+
+    try {
+      await updateUsername(newUsername)
+
+      dispatch(setAppUser({
+        ...appUser,
+        name: newUsername
+      }))
+
+      dispatch(AppAlertActions.show({
+        alertText: "You username has changed to " + newUsername,
+        severity: "success"
+      }))
+    } catch {
+      dispatch(AppAlertActions.show({
+        alertText: "Failed to change the username.",
+        severity: "error"
+      }))
+    }
   }
 
-  function onSubmitPasswordChanged(newPassword: string) {
+  async function onSubmitPasswordChanged(newPassword: string) {
     setIsChangingPassword(false);
+
+    try {
+      await updateUserPassword(newPassword)
+      logout() 
+    } catch {
+      dispatch(AppAlertActions.show({
+        alertText: "Failed to change the password.",
+        severity: "error"
+      }))
+    }
   }
 
-  function onSubmitAvatarChanged(newAvatar: string | File) {
-    setIsChangingAvatar(false);
+  async function onSubmitAvatarChanged(newAvatarSource: AvatarSource) {
+    await updateUserAvatar(newAvatarSource)
+
+    const { url } = await updateUserAvatar(newAvatarSource)
+
+    dispatch(setAppUser({
+      ...appUser,
+      avatarURL: url
+    }))
+
+    dispatch(AppAlertActions.show({
+      alertText: "Your avatar has been changed.",
+      severity: "success"
+    }))
+    
+    setIsChangingAvatar(false)
   }
+}
+
+async function updateUsername(newUsername: string) {
+
+}
+
+async function updateUserPassword(newPassword: string) {
+
+}
+
+async function updateUserAvatar(avatarSource: AvatarSource) {
+  return { url: "" }
 }
 
 function ChangeUsernameDialog({
@@ -205,7 +261,7 @@ function ChangeUsernameDialog({
           </Typography>
         </DialogContentText>
         <DialogActions>
-          <Button type="submit">Change</Button>
+          <Button type="submit" disabled={userNameTextFieldValue === ""}>Change</Button>
           <Button onClick={onClose}>Close</Button>
         </DialogActions>
       </DialogContent>
@@ -320,6 +376,10 @@ function ChangePasswordDialog({
   );
 }
 
+type AvatarSource =
+  | { from: "url"; url: string }
+  | { from: "uploaded-image"; imageFile: File };
+
 function ChangeAvatarDialog({
   open,
   onClose,
@@ -327,26 +387,21 @@ function ChangeAvatarDialog({
 }: {
   open: boolean;
   onClose: () => void;
-  onSubmit: (newPassword: string) => void;
+  onSubmit: (newAvatarSource: AvatarSource) => void;
 }) {
   const acceptedFileMIME = ["image/png", "image/jpeg"];
   const appUser = useAppSelector(selectAppUser);
   const [uploadErrorString, setUploadErrorString] = useState("");
 
-  const [selectedAvatar, setSelectedAvatar] = useState<
-    | {
-        from: "default-avatars";
-        index: number;
-      }
-    | {
-        from: "uploaded-image";
-      }
-    | null
-  >(null);
+  const [selectedAvatar, setSelectedAvatar] = useState<AvatarSource | null>(
+    null,
+  );
+
   const [uploadedImage, setUploadedImage] = useState<{
     file: File;
     objectURL: string;
   } | null>(null);
+
   const [defaultAvatars, setDefaultAvatars] = useState<string[]>([]);
 
   useEffect(() => {
@@ -355,12 +410,12 @@ function ChangeAvatarDialog({
 
     setSelectedAvatar(null);
     deleteUploadedImage();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   useEffect(() => {
     (async () => {
-      const imageSources = await fetchImageSources();
+      const imageSources = await fetchDefaultAvatars();
       setDefaultAvatars(imageSources);
     })();
   }, []);
@@ -371,20 +426,20 @@ function ChangeAvatarDialog({
     };
   }, [uploadedImage]);
 
-  const avatarElements = defaultAvatars.map((imageSrc, index) => {
-    const isSelected =
-      selectedAvatar !== null &&
-      selectedAvatar.from === "default-avatars" &&
-      selectedAvatar.index === index;
+  const avatarElements = defaultAvatars.map((avatarURL, index) => {
     return (
       <AvatarButton
         key={index}
-        src={imageSrc}
-        isSelected={isSelected}
+        src={avatarURL}
+        isSelected={
+          selectedAvatar !== null &&
+          selectedAvatar.from === "url" &&
+          selectedAvatar.url === avatarURL
+        }
         onClick={() => {
           setSelectedAvatar({
-            from: "default-avatars",
-            index,
+            from: "url",
+            url: avatarURL,
           });
         }}
       />
@@ -407,13 +462,10 @@ function ChangeAvatarDialog({
           <ArrowForward />
           {selectedAvatar ? (
             (() => {
-              let url: string;
-
-              if (selectedAvatar.from === "default-avatars") {
-                url = defaultAvatars[selectedAvatar.index];
-              } else {
-                url = uploadedImage!.objectURL;
-              }
+              const url =
+                selectedAvatar.from === "url"
+                  ? selectedAvatar.url
+                  : uploadedImage!.objectURL;
 
               return (
                 <Box>
@@ -470,6 +522,7 @@ function ChangeAvatarDialog({
                 onClick={() =>
                   setSelectedAvatar({
                     from: "uploaded-image",
+                    imageFile: uploadedImage.file,
                   })
                 }
                 isSelected={
@@ -525,13 +578,22 @@ function ChangeAvatarDialog({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleSubmit}>Change</Button>
+        <Button
+          onClick={onClickChangeAvatarButton}
+          disabled={selectedAvatar === null}
+        >
+          Change
+        </Button>
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
     </Dialog>
   );
 
-  function handleSubmit() {}
+  async function onClickChangeAvatarButton() {
+    if (!selectedAvatar) return;
+
+    $onSubmit(selectedAvatar);
+  }
 
   function onFileUploaded(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.item(0);
@@ -546,7 +608,7 @@ function ChangeAvatarDialog({
       return;
     }
 
-    setSelectedAvatar({ from: "uploaded-image" });
+    setSelectedAvatar({ from: "uploaded-image", imageFile: file });
 
     setUploadedImage({
       file,
@@ -574,7 +636,7 @@ const VisuallyHiddenInput = styled("input")({
   width: 1,
 });
 
-async function fetchImageSources() {
+async function fetchDefaultAvatars() {
   return [avatar1, avatar2, avatar3, avatar4, avatar5, avatar6, avatar7];
 }
 
