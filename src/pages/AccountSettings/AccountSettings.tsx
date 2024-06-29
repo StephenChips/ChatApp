@@ -19,12 +19,21 @@ import {
   Button,
   DialogActions,
   styled,
+  TextFieldProps,
+  InputAdornment
 } from "@mui/material";
-import { ArrowForward, Close, Delete, Logout } from "@mui/icons-material";
+import {
+  ArrowForward,
+  Close,
+  Delete,
+  Logout,
+  Visibility,
+  VisibilityOff
+} from "@mui/icons-material";
 import { useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../../store";
 import { selectAppUser, setAppUser } from "../../store/appUser";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import avatar1 from "../../assets/avatar1.svg";
 import avatar2 from "../../assets/avatar2.svg";
@@ -134,22 +143,28 @@ export function Account() {
     setIsChangingUsername(false);
 
     try {
-      await updateUsername(newUsername)
+      await updateUsername(newUsername);
 
-      dispatch(setAppUser({
-        ...appUser,
-        name: newUsername
-      }))
+      dispatch(
+        setAppUser({
+          ...appUser,
+          name: newUsername,
+        }),
+      );
 
-      dispatch(AppAlertActions.show({
-        alertText: "You username has changed to " + newUsername,
-        severity: "success"
-      }))
+      dispatch(
+        AppAlertActions.show({
+          alertText: "You username has changed to " + newUsername,
+          severity: "success",
+        }),
+      );
     } catch {
-      dispatch(AppAlertActions.show({
-        alertText: "Failed to change the username.",
-        severity: "error"
-      }))
+      dispatch(
+        AppAlertActions.show({
+          alertText: "Failed to change the username.",
+          severity: "error",
+        }),
+      );
     }
   }
 
@@ -157,45 +172,47 @@ export function Account() {
     setIsChangingPassword(false);
 
     try {
-      await updateUserPassword(newPassword)
-      logout() 
+      await updateUserPassword(newPassword);
+      logout();
     } catch {
-      dispatch(AppAlertActions.show({
-        alertText: "Failed to change the password.",
-        severity: "error"
-      }))
+      dispatch(
+        AppAlertActions.show({
+          alertText: "Failed to change the password.",
+          severity: "error",
+        }),
+      );
     }
   }
 
   async function onSubmitAvatarChanged(newAvatarSource: AvatarSource) {
-    await updateUserAvatar(newAvatarSource)
+    await updateUserAvatar(newAvatarSource);
 
-    const { url } = await updateUserAvatar(newAvatarSource)
+    const { url } = await updateUserAvatar(newAvatarSource);
 
-    dispatch(setAppUser({
-      ...appUser,
-      avatarURL: url
-    }))
+    dispatch(
+      setAppUser({
+        ...appUser,
+        avatarURL: url,
+      }),
+    );
 
-    dispatch(AppAlertActions.show({
-      alertText: "Your avatar has been changed.",
-      severity: "success"
-    }))
-    
-    setIsChangingAvatar(false)
+    dispatch(
+      AppAlertActions.show({
+        alertText: "Your avatar has been changed.",
+        severity: "success",
+      }),
+    );
+
+    setIsChangingAvatar(false);
   }
 }
 
-async function updateUsername(newUsername: string) {
+async function updateUsername(newUsername: string) {}
 
-}
-
-async function updateUserPassword(newPassword: string) {
-
-}
+async function updateUserPassword(newPassword: string) {}
 
 async function updateUserAvatar(avatarSource: AvatarSource) {
-  return { url: "" }
+  return { url: "" };
 }
 
 function ChangeUsernameDialog({
@@ -261,11 +278,39 @@ function ChangeUsernameDialog({
           </Typography>
         </DialogContentText>
         <DialogActions>
-          <Button type="submit" disabled={userNameTextFieldValue === ""}>Change</Button>
+          <Button type="submit" disabled={userNameTextFieldValue === ""}>
+            Change
+          </Button>
           <Button onClick={onClose}>Close</Button>
         </DialogActions>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function PasswordField(props: TextFieldProps) {
+  const [isPasswordHidden, setIsPasswordHidden] = useState(true)
+
+  return (
+    <TextField
+      {...props}
+      type={isPasswordHidden ? "password" : "text"}
+      InputProps={{
+        endAdornment: (
+          <InputAdornment position="end">
+            <IconButton
+              aria-label="toggle password visibility"
+              onMouseDown={() => setIsPasswordHidden(false)}
+              onMouseUp={() => setIsPasswordHidden(true)}
+              edge="end"
+              size="small"
+            >
+              {isPasswordHidden ? <Visibility /> : <VisibilityOff />}
+            </IconButton>
+          </InputAdornment>
+        ),
+      }}
+    ></TextField>
   );
 }
 
@@ -312,13 +357,12 @@ function ChangePasswordDialog({
     >
       <DialogTitle>Change Password</DialogTitle>
       <DialogContent>
-        <TextField
+        <PasswordField
           required
           id="oldPassword"
           name="oldPassword"
           label="Old Password"
           placeholder="Enter the old password"
-          type="password"
           fullWidth
           variant="standard"
           value={oldPassword}
@@ -327,15 +371,14 @@ function ChangePasswordDialog({
             setOldPassword(event.target.value);
           }}
           margin="normal"
-        ></TextField>
-        <TextField
+        />
+        <PasswordField
           required
           autoFocus
           id="newPassword"
           name="newPassword"
           label="New Password"
           placeholder="Enter a new password"
-          type="password"
           fullWidth
           variant="standard"
           value={newPassword}
@@ -344,15 +387,14 @@ function ChangePasswordDialog({
             setNewPassword(event.target.value);
           }}
           margin="normal"
-        ></TextField>
-        <TextField
+        />
+        <PasswordField
           error={showError && newPassword !== oldPassword}
           autoFocus
           id="newPasswordConfirm"
           name="newPasswordConfirm"
           label="Confirm the new password"
           placeholder="Enter the new password again"
-          type="password"
           fullWidth
           variant="standard"
           value={newPasswordConfirm}
@@ -366,7 +408,7 @@ function ChangePasswordDialog({
               : ""
           }
           margin="normal"
-        ></TextField>
+        />
         <DialogActions>
           <Button type="submit">Change</Button>
           <Button onClick={onClose}>Close</Button>
