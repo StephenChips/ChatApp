@@ -20,7 +20,7 @@ import {
   DialogActions,
   styled,
   TextFieldProps,
-  InputAdornment
+  InputAdornment,
 } from "@mui/material";
 import {
   ArrowForward,
@@ -28,7 +28,7 @@ import {
   Delete,
   Logout,
   Visibility,
-  VisibilityOff
+  VisibilityOff,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../../store";
@@ -289,7 +289,7 @@ function ChangeUsernameDialog({
 }
 
 function PasswordField(props: TextFieldProps) {
-  const [isPasswordHidden, setIsPasswordHidden] = useState(true)
+  const [isPasswordHidden, setIsPasswordHidden] = useState(true);
 
   return (
     <TextField
@@ -326,14 +326,12 @@ function ChangePasswordDialog({
   const [showError, setShowError] = useState(false);
 
   const [newPassword, setNewPassword] = useState("");
-  const [oldPassword, setOldPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
 
   useEffect(() => {
     if (!open) return;
     setShowError(false);
     setNewPassword("");
-    setOldPassword("");
     setNewPasswordConfirm("");
   }, [open]);
 
@@ -359,21 +357,6 @@ function ChangePasswordDialog({
       <DialogContent>
         <PasswordField
           required
-          id="oldPassword"
-          name="oldPassword"
-          label="Old Password"
-          placeholder="Enter the old password"
-          fullWidth
-          variant="standard"
-          value={oldPassword}
-          onChange={(event) => {
-            setShowError(false);
-            setOldPassword(event.target.value);
-          }}
-          margin="normal"
-        />
-        <PasswordField
-          required
           autoFocus
           id="newPassword"
           name="newPassword"
@@ -389,7 +372,7 @@ function ChangePasswordDialog({
           margin="normal"
         />
         <PasswordField
-          error={showError && newPassword !== oldPassword}
+          error={showError && newPassword !== newPasswordConfirm}
           autoFocus
           id="newPasswordConfirm"
           name="newPasswordConfirm"
@@ -403,7 +386,7 @@ function ChangePasswordDialog({
             setNewPasswordConfirm(event.target.value);
           }}
           helperText={
-            showError && newPassword !== oldPassword
+            showError && newPassword !== newPasswordConfirm
               ? "This password is not matched the new password your entered above."
               : ""
           }
