@@ -7,4 +7,11 @@ body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   --primary-theme-color: rgba(33, 167, 245, 0.877);
   overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
 }

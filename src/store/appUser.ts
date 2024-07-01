@@ -7,17 +7,17 @@ export type AppUserStore = {
   loginToken?: string;
 };
 
-const initialState: AppUserStore = {
-  appUser: {
-    id: 0,
-    name: "John Wick",
-    avatarURL:
-      "https://fastly.picsum.photos/id/469/50/50.jpg?hmac=Wf4YHv-NPz_PHpK4sTzxM9tro8-_pomifQGnTv15x1E",
-  },
-  loginToken: "12344566785433456",
-};
+// const initialState: AppUserStore = {
+//   appUser: {
+//     id: 0,
+//     name: "John Wick",
+//     avatarURL:
+//       "https://fastly.picsum.photos/id/469/50/50.jpg?hmac=Wf4YHv-NPz_PHpK4sTzxM9tro8-_pomifQGnTv15x1E",
+//   },
+//   loginToken: "12344566785433456",
+// };
 
-// const initialState: AppUserStore = {}
+const initialState: AppUserStore = {}
 
 const usersSlice = createSlice({
   name: "appUser",
