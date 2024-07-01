@@ -3,6 +3,7 @@ import { App } from "../src/pages/App/App";
 import { MessageWindow } from "./pages/App/components/MessageWindow/MessageWindow";
 import { NotificationWindow } from "./pages/NotificationWindow/NotificationWindow.tsx";
 import { Account } from "./pages/AccountSettings/AccountSettings.tsx";
+import { Login } from "./pages/Login/Login.tsx";
 
 export const router = createBrowserRouter([
   {
@@ -23,4 +24,8 @@ export const router = createBrowserRouter([
       },
     ],
   },
+  {
+    path: "/login",
+    element: <Login />
+  }
 ]);

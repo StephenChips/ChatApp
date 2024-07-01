@@ -2,18 +2,22 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from ".";
 import { User } from "./modeltypes";
 
-export type UserStore = {
+export type AppUserStore = {
   appUser?: User;
+  loginToken?: string
 };
 
-const initialState: UserStore = {
+const initialState: AppUserStore = {
   appUser: {
     id: 0,
     name: "John Wick",
     avatarURL:
       "https://fastly.picsum.photos/id/469/50/50.jpg?hmac=Wf4YHv-NPz_PHpK4sTzxM9tro8-_pomifQGnTv15x1E",
   },
+  loginToken: "12344566785433456"
 };
+
+// const initialState: AppUserStore = {}
 
 const usersSlice = createSlice({
   name: "appUser",
@@ -22,10 +26,16 @@ const usersSlice = createSlice({
     setAppUser(state, { payload: appUser }: PayloadAction<User>) {
       state.appUser = appUser;
     },
-  },
+
+    setLoginToken(state, { payload: loginToken }: PayloadAction<string>) {
+      state.loginToken = loginToken
+    },
+  }
 });
 
 export const selectAppUser = (state: RootState) => state.appUser.appUser;
+
+export const selectLoginToken = (state: RootState) => state.appUser.loginToken
 
 export const { setAppUser } = usersSlice.actions;
 
