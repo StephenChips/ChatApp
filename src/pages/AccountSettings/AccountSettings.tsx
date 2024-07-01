@@ -43,10 +43,12 @@ import avatar5 from "../../assets/avatar5.svg";
 import avatar6 from "../../assets/avatar6.svg";
 import avatar7 from "../../assets/avatar7.svg";
 import { AppAlertActions } from "../../store/appAlert";
+import { useLogin } from "../hooks";
 export function Account() {
   const appUser = useAppSelector(selectAppUser)!;
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const { logout } = useLogin();
 
   const [isChangingUsername, setIsChangingUsername] = useState(false);
   const [isChangingAvatar, setIsChangingAvatar] = useState(false);
@@ -134,11 +136,6 @@ export function Account() {
     </>
   );
 
-  function logout() {
-    // add logout logic here
-    navigate("/login");
-  }
-
   async function onSubmitUsernameChanged(newUsername: string) {
     setIsChangingUsername(false);
 
@@ -207,11 +204,19 @@ export function Account() {
   }
 }
 
-async function updateUsername(newUsername: string) {}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function updateUsername(_newUsername: string) {
+  // TODO to be implemented
+}
 
-async function updateUserPassword(newPassword: string) {}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function updateUserPassword(_newPassword: string) {
+  // TODO to be implemented
+}
 
-async function updateUserAvatar(avatarSource: AvatarSource) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function updateUserAvatar(_avatarSource: AvatarSource) {
+  // TODO to be implemented
   return { url: "" };
 }
 

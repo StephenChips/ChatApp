@@ -4,7 +4,7 @@ import { User } from "./modeltypes";
 
 export type AppUserStore = {
   appUser?: User;
-  loginToken?: string
+  loginToken?: string;
 };
 
 const initialState: AppUserStore = {
@@ -14,7 +14,7 @@ const initialState: AppUserStore = {
     avatarURL:
       "https://fastly.picsum.photos/id/469/50/50.jpg?hmac=Wf4YHv-NPz_PHpK4sTzxM9tro8-_pomifQGnTv15x1E",
   },
-  loginToken: "12344566785433456"
+  loginToken: "12344566785433456",
 };
 
 // const initialState: AppUserStore = {}
@@ -28,15 +28,21 @@ const usersSlice = createSlice({
     },
 
     setLoginToken(state, { payload: loginToken }: PayloadAction<string>) {
-      state.loginToken = loginToken
+      state.loginToken = loginToken;
     },
-  }
+
+    clearAll() {
+      return {};
+    },
+  },
 });
 
 export const selectAppUser = (state: RootState) => state.appUser.appUser;
 
-export const selectLoginToken = (state: RootState) => state.appUser.loginToken
+export const selectLoginToken = (state: RootState) => state.appUser.loginToken;
 
 export const { setAppUser } = usersSlice.actions;
+
+export const AppUserActions = usersSlice.actions;
 
 export default usersSlice.reducer;
