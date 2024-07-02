@@ -1,11 +1,11 @@
 import { useAppDispatch, useAppSelector } from "../store";
-import { AppUserActions, selectLoginToken } from "../store/appUser";
+import { AppUserActions, selectLogInToken } from "../store/appUser";
 
-export function useLogin() {
-  const loginToken = useAppSelector(selectLoginToken);
+export function useLogIn() {
+  const logInToken = useAppSelector(selectLogInToken);
   const dispatch = useAppDispatch();
 
-  async function login() {}
+  async function logIn() {}
 
   async function logout() {
     // Since we use RESTful auth (JWT), so to logout means deleting the
@@ -14,9 +14,9 @@ export function useLogin() {
   }
 
   return {
-    loginToken,
-    login,
+    logInToken,
+    logIn,
     logout,
-    loggedIn: loginToken !== undefined,
+    loggedIn: logInToken !== undefined,
   };
 }

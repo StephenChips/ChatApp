@@ -36,7 +36,7 @@ import { Outlet, useLocation, useNavigate, type Location } from "react-router";
 import { NotificationActions } from "../../store/notifications";
 import { DeleteUserDialogActions } from "../../store/deleteUserDialog";
 import { AppAlert } from "./components/AppAlert/AppAlert";
-import { selectLoginToken } from "../../store/appUser";
+import { selectLogInToken } from "../../store/appUser";
 import { NavigateEffect } from "../../components/NavigateEffect";
 
 export type MainPageContext = {
@@ -71,17 +71,17 @@ function useLocationChange(
   }, [location, onLocationChange]);
 }
 
-function useLogin() {
-  const loginToken = useAppSelector(selectLoginToken);
+function useLogIn() {
+  const logInToken = useAppSelector(selectLogInToken);
 
-  function login() {}
+  function logIn() {}
 
   function logout() {}
   return {
-    loginToken,
-    login,
+    logInToken,
+    logIn,
     logout,
-    hasLoggedIn: loginToken !== undefined,
+    hasLoggedIn: logInToken !== undefined,
   };
 }
 
@@ -142,9 +142,9 @@ export function App() {
     };
   }, []);
 
-  const { hasLoggedIn } = useLogin();
+  const { hasLoggedIn } = useLogIn();
   if (!hasLoggedIn) {
-    return <NavigateEffect to="/login" replace />;
+    return <NavigateEffect to="/log-in" replace />;
   }
 
   return (

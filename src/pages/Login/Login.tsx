@@ -8,7 +8,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useLogin } from "../hooks";
+import { useLogIn } from "../hooks";
 import { NavigateEffect } from "../../components/NavigateEffect";
 import { useState } from "react";
 import { useAppDispatch } from "../../store";
@@ -19,8 +19,8 @@ import { useNavigate } from "react-router";
 const CHATAPP_ID_INPUT_ELEMENT_ID = "chatapp-id";
 const PASSWORD_INPUT_ELEMENT_ID = "password";
 
-export function Login() {
-  const { loginToken } = useLogin();
+export function LogIn() {
+  const { logInToken } = useLogIn();
   const [rememberMe, setRememberMe] = useState(false);
   const [chatAppID, setChatAppID] = useState("");
   const [password, setPassword] = useState("");
@@ -32,7 +32,7 @@ export function Login() {
     text: string;
   } | null>(null);
 
-  if (loginToken !== undefined) {
+  if (logInToken !== undefined) {
     return <NavigateEffect to="/" />;
   }
 
@@ -153,7 +153,7 @@ export function Login() {
   async function onLoggingIn() {
     try {
       const token = await HttpRequests.getAuthToken(chatAppID, password);
-      dispatch(AppUserActions.setLoginToken(token));
+      dispatch(AppUserActions.setLogInToken(token));
       if (rememberMe) {
         localStorage.setItem(LOCAL_STORAGE_AUTH_TOKEN_KEY, token);
       }

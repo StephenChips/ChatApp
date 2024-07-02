@@ -43,12 +43,12 @@ import avatar5 from "../../assets/avatar5.svg";
 import avatar6 from "../../assets/avatar6.svg";
 import avatar7 from "../../assets/avatar7.svg";
 import { AppAlertActions } from "../../store/appAlert";
-import { useLogin } from "../hooks";
+import { useLogIn } from "../hooks";
 export function Account() {
   const appUser = useAppSelector(selectAppUser)!;
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { logout } = useLogin();
+  const { logout } = useLogIn();
 
   const [isChangingUsername, setIsChangingUsername] = useState(false);
   const [isChangingAvatar, setIsChangingAvatar] = useState(false);
