@@ -17,7 +17,11 @@ export type AppUserStore = {
 //   loginToken: "12344566785433456",
 // };
 
-const initialState: AppUserStore = {}
+export const LOCAL_STORAGE_AUTH_TOKEN_KEY = "chatapp-auth-token";
+
+const initialState: AppUserStore = {
+  loginToken: localStorage.getItem(LOCAL_STORAGE_AUTH_TOKEN_KEY) ?? undefined
+}
 
 const usersSlice = createSlice({
   name: "appUser",
