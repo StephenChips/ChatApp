@@ -19,21 +19,18 @@ import {
   Button,
   DialogActions,
   styled,
-  TextFieldProps,
-  InputAdornment,
 } from "@mui/material";
 import {
   ArrowForward,
   Close,
   Delete,
   Logout,
-  Visibility,
-  VisibilityOff,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../../store";
 import { selectAppUser, setAppUser } from "../../store/appUser";
 import React, { useEffect, useState } from "react";
+import { PasswordField } from "../../components/PasswordField";
 
 import avatar1 from "../../assets/avatar1.svg";
 import avatar2 from "../../assets/avatar2.svg";
@@ -43,7 +40,8 @@ import avatar5 from "../../assets/avatar5.svg";
 import avatar6 from "../../assets/avatar6.svg";
 import avatar7 from "../../assets/avatar7.svg";
 import { AppAlertActions } from "../../store/appAlert";
-import { useLogIn } from "../hooks";
+import { useLogIn } from "../../hooks";
+
 export function Account() {
   const appUser = useAppSelector(selectAppUser)!;
   const navigate = useNavigate();
@@ -290,32 +288,6 @@ function ChangeUsernameDialog({
         </DialogActions>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function PasswordField(props: TextFieldProps) {
-  const [isPasswordHidden, setIsPasswordHidden] = useState(true);
-
-  return (
-    <TextField
-      {...props}
-      type={isPasswordHidden ? "password" : "text"}
-      InputProps={{
-        endAdornment: (
-          <InputAdornment position="end">
-            <IconButton
-              aria-label="toggle password visibility"
-              onMouseDown={() => setIsPasswordHidden(false)}
-              onMouseUp={() => setIsPasswordHidden(true)}
-              edge="end"
-              size="small"
-            >
-              {isPasswordHidden ? <Visibility /> : <VisibilityOff />}
-            </IconButton>
-          </InputAdornment>
-        ),
-      }}
-    ></TextField>
   );
 }
 

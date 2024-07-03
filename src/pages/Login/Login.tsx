@@ -8,13 +8,15 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useLogIn } from "../hooks";
+import { useLogIn } from "../../hooks";
 import { NavigateEffect } from "../../components/NavigateEffect";
 import { useState } from "react";
 import { useAppDispatch } from "../../store";
 import { AppUserActions } from "../../store/appUser";
 import { LOCAL_STORAGE_AUTH_TOKEN_KEY } from "../../store/appUser";
 import { useNavigate } from "react-router";
+import { LOG_IN_AND_SIGN_UP_PAGE_BACKGROUND } from "../../constants";
+import { PasswordField } from "../../components/PasswordField";
 
 const CHATAPP_ID_INPUT_ELEMENT_ID = "chatapp-id";
 const PASSWORD_INPUT_ELEMENT_ID = "password";
@@ -41,10 +43,7 @@ export function LogIn() {
       sx={{
         width: "100%",
         height: "100%",
-        background: `
-            radial-gradient(circle at 0% 200%, #2D7FFF 0%, rgba(255,255,255,0) 80%),
-            radial-gradient(circle at 100% 100%, rgb(185, 234, 237) 0%, rgba(0,0,0,0) 70%)
-        `,
+        background: LOG_IN_AND_SIGN_UP_PAGE_BACKGROUND,
         position: "relative",
       }}
     >
@@ -102,7 +101,7 @@ export function LogIn() {
               el.setCustomValidity("Please enter your ChatApp ID.");
             }}
           />
-          <TextField
+          <PasswordField
             required
             id={PASSWORD_INPUT_ELEMENT_ID}
             label="Password"
@@ -111,9 +110,6 @@ export function LogIn() {
               marginBottom: "5px",
             }}
             fullWidth
-            InputProps={{
-              type: "password",
-            }}
             value={password}
             onChange={(e) => {
               setPassword(e.target.value);

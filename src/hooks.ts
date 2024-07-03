@@ -1,5 +1,5 @@
-import { useAppDispatch, useAppSelector } from "../store";
-import { AppUserActions, selectLogInToken } from "../store/appUser";
+import { useAppDispatch, useAppSelector } from "./store";
+import { AppUserActions, selectLogInToken } from "./store/appUser";
 
 export function useLogIn() {
   const logInToken = useAppSelector(selectLogInToken);
