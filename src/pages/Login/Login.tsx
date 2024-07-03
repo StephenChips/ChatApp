@@ -25,7 +25,7 @@ export function LogIn() {
   const [chatAppID, setChatAppID] = useState("");
   const [password, setPassword] = useState("");
   const dispatch = useAppDispatch();
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const [alertContent, setAlertContent] = useState<{
     severity: AlertColor;
@@ -116,8 +116,8 @@ export function LogIn() {
             }}
             value={password}
             onChange={(e) => {
-              setPassword(e.target.value)
-              e.target.setCustomValidity("")
+              setPassword(e.target.value);
+              e.target.setCustomValidity("");
             }}
             onInvalid={(e) => {
               const el = e.target as HTMLInputElement;
@@ -142,7 +142,9 @@ export function LogIn() {
           >
             Log In
           </Button>
-          <Button fullWidth onClick={() => navigate("/sign-up")}>Sign Up</Button>
+          <Button fullWidth onClick={() => navigate("/sign-up")}>
+            Sign Up
+          </Button>
         </Box>
       </Card>
     </Box>

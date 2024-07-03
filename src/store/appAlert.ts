@@ -1,46 +1,48 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit"
-import { RootState } from "."
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { RootState } from ".";
 
-type SeverityType = "success" | "info" | "warning" | "error"
+type SeverityType = "success" | "info" | "warning" | "error";
 
 type AppAlertType = {
-  alertText: string
-  visible: boolean
-  severity: SeverityType
-}
-
+  alertText: string;
+  visible: boolean;
+  severity: SeverityType;
+};
 
 const initialState: AppAlertType = {
   severity: "success",
   alertText: "",
-  visible: false
-}
+  visible: false,
+};
 
 const store = createSlice({
   name: "appAlert",
   initialState,
   reducers: {
-    show(_state, {
-      payload: { alertText, severity = "success" }
-    }: PayloadAction<{ alertText: string, severity: SeverityType }>) {
+    show(
+      _state,
+      {
+        payload: { alertText, severity = "success" },
+      }: PayloadAction<{ alertText: string; severity: SeverityType }>,
+    ) {
       return {
         visible: true,
         alertText,
-        severity
-      }
+        severity,
+      };
     },
 
     hide(state) {
-      state.alertText = ""
-      state.visible = false
-    }
-  }
-})
+      state.alertText = "";
+      state.visible = false;
+    },
+  },
+});
 
-export const AppAlertActions = store.actions
+export const AppAlertActions = store.actions;
 
-export default store.reducer
+export default store.reducer;
 
 export function selectAppAlert(rootState: RootState) {
-  return rootState.appAlert
+  return rootState.appAlert;
 }
