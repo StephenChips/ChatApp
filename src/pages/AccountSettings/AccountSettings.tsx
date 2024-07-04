@@ -32,6 +32,7 @@ import { selectAppUser, setAppUser } from "../../store/appUser";
 import React, { useEffect, useState } from "react";
 import { PasswordField } from "../../components/PasswordField";
 
+// Dummy images. Eventually they should be fetched from the beckend.
 import avatar1 from "../../assets/avatar1.svg";
 import avatar2 from "../../assets/avatar2.svg";
 import avatar3 from "../../assets/avatar3.svg";
@@ -180,8 +181,6 @@ export function Account() {
   }
 
   async function onSubmitAvatarChanged(newAvatarSource: AvatarSource) {
-    await updateUserAvatar(newAvatarSource);
-
     const { url } = await updateUserAvatar(newAvatarSource);
 
     dispatch(
@@ -626,6 +625,8 @@ function ChangeAvatarDialog({
   }
 }
 
+// A hidden input for providing file uploading and is designed to be
+// called by other components or HTML elements.
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
   clipPath: "inset(50%)",

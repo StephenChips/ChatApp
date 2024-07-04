@@ -9,12 +9,17 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { LOG_IN_AND_SIGN_UP_PAGE_BACKGROUND } from "../../constants";
+import { RADIAL_GRADIENT_BACKGROUND } from "../../constants";
 import React, { useEffect, useRef, useState } from "react";
 import { PasswordField } from "../../components/PasswordField";
 import { useNavigate } from "react-router";
 
+import avatar1 from "../../assets/avatar1.svg";
+import { useAppDispatch } from "../../store";
+import { AppUserActions } from "../../store/appUser";
+
 export function SignUp() {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
@@ -55,7 +60,7 @@ export function SignUp() {
   return (
     <Box
       sx={{
-        background: LOG_IN_AND_SIGN_UP_PAGE_BACKGROUND,
+        background: RADIAL_GRADIENT_BACKGROUND,
         width: "100%",
         height: "100%",
         display: "flex",
@@ -203,7 +208,10 @@ export function SignUp() {
     setIsCreatingAccount(true);
 
     try {
-      const result = await createAccount(username, password);
+      const { user, loginToken } = await createAccount(username, password);
+      dispatch(AppUserActions.setAppUser(user));
+      dispatch(AppUserActions.setLogInToken(loginToken));
+      navigate("/welcome");
     } catch (e) {
       const error = e as Error;
       setIsCreatingAccount(false);
@@ -217,8 +225,6 @@ export function SignUp() {
   function showAlert(severity: AlertColor, text: string) {
     setAlertContent({ severity, text });
 
-    console.log(snackbarStateRef);
-
     if (snackbarStateRef.current === "visible") {
       setSnackbarState("will-be-visible");
     } else {
@@ -226,5 +232,14 @@ export function SignUp() {
     }
   }
 
-  async function createAccount(username: string, password: string) {}
+  async function createAccount(username: string, password: string) {
+    return {
+      user: {
+        id: 1,
+        avatarURL: avatar1,
+        name: username,
+      },
+      loginToken: "123446576",
+    };
+  }
 }

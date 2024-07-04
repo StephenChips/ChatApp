@@ -15,7 +15,7 @@ import { useAppDispatch } from "../../store";
 import { AppUserActions } from "../../store/appUser";
 import { LOCAL_STORAGE_AUTH_TOKEN_KEY } from "../../store/appUser";
 import { useNavigate } from "react-router";
-import { LOG_IN_AND_SIGN_UP_PAGE_BACKGROUND } from "../../constants";
+import { RADIAL_GRADIENT_BACKGROUND } from "../../constants";
 import { PasswordField } from "../../components/PasswordField";
 
 const CHATAPP_ID_INPUT_ELEMENT_ID = "chatapp-id";
@@ -43,7 +43,7 @@ export function LogIn() {
       sx={{
         width: "100%",
         height: "100%",
-        background: LOG_IN_AND_SIGN_UP_PAGE_BACKGROUND,
+        background: RADIAL_GRADIENT_BACKGROUND,
         position: "relative",
       }}
     >
