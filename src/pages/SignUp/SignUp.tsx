@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Card,
+  LinearProgress,
   Snackbar,
   TextField,
   Typography,
@@ -20,7 +21,7 @@ export function SignUp() {
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
 
-  const [passwordError, setPasswordError] = useState<string | null>("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordConfirmationError, setPasswordConfirmationError] = useState<
     string | null
   >(null);
@@ -38,6 +39,8 @@ export function SignUp() {
   const snackbarStateRef = useRef<SnackbarState>();
   const timeoutIDRef = useRef<number>();
   snackbarStateRef.current = snackbarState;
+
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
 
   useEffect(() => {
     if (snackbarState !== "visible") return;
@@ -92,9 +95,7 @@ export function SignUp() {
             required
             label="Password"
             variant="outlined"
-            sx={{
-              marginBottom: 2,
-            }}
+            sx={{ marginBottom: 2 }}
             fullWidth
             value={password}
             onChange={(e) => {
@@ -129,17 +130,33 @@ export function SignUp() {
             }}
             helperText={passwordConfirmationError}
           />
-          <Button
-            fullWidth
-            type="submit"
-            variant="contained"
-            sx={{ marginBottom: "10px" }}
-          >
-            Create Account
-          </Button>
-          <Button fullWidth onClick={() => navigate("/log-in")}>
-            Cancel
-          </Button>
+
+          {isCreatingAccount ? (
+            <>
+              <LinearProgress sx={{ marginBottom: "10px" }} />
+              <Typography variant="body2" textAlign="center" display="block">
+                Your account is being created. Please don't leave this page.
+              </Typography>
+            </>
+          ) : (
+            <>
+              <Button
+                fullWidth
+                type="submit"
+                variant={isCreatingAccount ? "text" : "contained"}
+                sx={{ marginBottom: "10px" }}
+              >
+                Create Account
+              </Button>
+              <Button
+                fullWidth
+                onClick={() => navigate("/log-in")}
+                disabled={isCreatingAccount}
+              >
+                Cancel
+              </Button>
+            </>
+          )}
         </Box>
       </Card>
       <Snackbar
@@ -183,11 +200,13 @@ export function SignUp() {
       return;
     }
 
+    setIsCreatingAccount(true);
+
     try {
       const result = await createAccount(username, password);
-
     } catch (e) {
       const error = e as Error;
+      setIsCreatingAccount(false);
       showAlert(
         "error",
         error.message || "Something wrong happened, please retry.",
@@ -198,12 +217,14 @@ export function SignUp() {
   function showAlert(severity: AlertColor, text: string) {
     setAlertContent({ severity, text });
 
+    console.log(snackbarStateRef);
+
     if (snackbarStateRef.current === "visible") {
       setSnackbarState("will-be-visible");
     } else {
       setSnackbarState("visible");
     }
   }
-}
 
-async function createAccount(username: string, password: string) {}
+  async function createAccount(username: string, password: string) {}
+}
