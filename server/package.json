@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.6",
     "@types/koa": "^2.15.0",
     "@types/koa-static": "^4.0.4",
     "@types/node": "^20.14.10",
@@ -17,6 +18,7 @@
     "typescript": "^5.5.3"
   },
   "dependencies": {
+    "jsonwebtoken": "^9.0.2",
     "koa": "^2.15.3",
     "koa-static": "^5.0.0",
     "pg": "^8.12.0",
