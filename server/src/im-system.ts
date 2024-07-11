@@ -2,9 +2,6 @@
 import * as SocketIO from "socket.io";
 import * as jwt from "jsonwebtoken"
 
-import { jwtSecret } from "../settings"
-import { promisify } from "util";
-
 type UserID = number;
 
 type Message = {
@@ -26,13 +23,13 @@ const onlineUserSockets = new Map<UserID, SocketIO.Socket>();
  * 
  * @param io 
  */
-export function initializeIMSystem(io: SocketIO.Server) {
+export function initializeIMSystem(io: SocketIO.Server, jwtSecret: string) {
   io.on("connection", async (socket) => {
-    const jwtPayload = await getJWTPayload(socket)
+    const jwtPayload = await getJWTPayload(socket, jwtSecret)
     const userID = Number(jwtPayload.sub);
 
     onlineUserSockets.set(userID, socket)
-  
+
     socket.on("disconnect", () => {
       onlineUserSockets.delete(userID)
     })
@@ -51,7 +48,7 @@ export function initializeIMSystem(io: SocketIO.Server) {
   })
 }
 
-async function getJWTPayload(socket: SocketIO.Socket) {
+async function getJWTPayload(socket: SocketIO.Socket, jwtSecret: string) {
   const headerPrefix = "bearer ";
   const header = socket.request.headers["authorization"];
 
