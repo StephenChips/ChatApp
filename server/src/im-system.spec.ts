@@ -2,7 +2,7 @@ import { add } from "./foo"
 import * as SocketIOClient from "socket.io-client"
 import * as SocketIOServer from "socket.io"
 import { createServer as createHTTPServer } from "http"
-import { initializeIMSystem } from "./im-system"
+import { initIMSystem } from "./im-system"
 import { sign as signJWT } from "jsonwebtoken"
 
 describe("Connect to an IM Server", () => {
@@ -17,7 +17,7 @@ describe("Connect to an IM Server", () => {
 
     socketIOServer = new SocketIOServer.Server(httpServer);
 
-    initializeIMSystem(socketIOServer, jwtSecret)
+    initIMSystem(socketIOServer, jwtSecret)
 
     httpServer.listen(serverPort, () => {
       done()

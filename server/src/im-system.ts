@@ -23,7 +23,7 @@ const onlineUserSockets = new Map<UserID, SocketIO.Socket>();
  * 
  * @param io 
  */
-export function initializeIMSystem(io: SocketIO.Server, jwtSecret: string) {
+export function initIMSystem(io: SocketIO.Server, jwtSecret: string) {
   io.use(async (socket, next) => {
     let jwtPayload: jwt.JwtPayload;
     let userID: number;
@@ -54,7 +54,7 @@ export function initializeIMSystem(io: SocketIO.Server, jwtSecret: string) {
         callback({ status: "failed" });
         return;
       }
-      
+
       recipientSocket.emit("message", message);
     })
   })

@@ -1,6 +1,8 @@
 import { startApp } from "./app"
-import { jwtSecret } from "../settings"
+import { jwtSecret, poolConfig } from "../settings"
 
 startApp({
-  jwtSecret
-});
+  jwtSecret,
+  poolConfig,
+  port: 8080
+})

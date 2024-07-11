@@ -1,9 +1,15 @@
 import { readFile } from "fs/promises";
 import { Pool, PoolConfig } from "pg";
 
-const databaseConfig = require("../database.config.json") as PoolConfig
+let pool: Pool
 
-export const pool = new Pool(databaseConfig);
+export function getPool() {
+  return pool;
+}
+
+export function initPool(poolConfig: PoolConfig) {
+  pool = new Pool(poolConfig);
+}
 
 /**
  * @param filePath The path of the SQL file to be executed.
