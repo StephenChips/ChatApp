@@ -24,16 +24,28 @@ const onlineUserSockets = new Map<UserID, SocketIO.Socket>();
  * @param io 
  */
 export function initializeIMSystem(io: SocketIO.Server, jwtSecret: string) {
-  io.on("connection", async (socket) => {
-    const jwtPayload = await getJWTPayload(socket, jwtSecret)
-    const userID = Number(jwtPayload.sub);
+  io.use(async (socket, next) => {
+    let jwtPayload: jwt.JwtPayload;
+    let userID: number;
 
-    onlineUserSockets.set(userID, socket)
+    try {
+      jwtPayload = await getJWTPayload(socket, jwtSecret)
+    } catch (e) {
+      next(e as Error)
+      return;
+    }
 
+    userID = Number(jwtPayload.sub);
+
+    onlineUserSockets.set(userID, socket);
     socket.on("disconnect", () => {
       onlineUserSockets.delete(userID)
     })
 
+    next();
+  })
+
+  io.on("connection", async (socket) => {
     socket.on("message", (message: Message, callback) => {
       const recipientSocket = onlineUserSockets.get(message.recipientID)
       const isRecipientOffline = recipientSocket === undefined
@@ -42,7 +54,7 @@ export function initializeIMSystem(io: SocketIO.Server, jwtSecret: string) {
         callback({ status: "failed" });
         return;
       }
-
+      
       recipientSocket.emit("message", message);
     })
   })
@@ -50,17 +62,17 @@ export function initializeIMSystem(io: SocketIO.Server, jwtSecret: string) {
 
 async function getJWTPayload(socket: SocketIO.Socket, jwtSecret: string) {
   const headerPrefix = "bearer ";
-  const header = socket.request.headers["authorization"];
+  const authHeader = socket.request.headers["authorization"];
 
-  if (!header) {
+  if (!authHeader) {
     throw new Error("Requires a JWT token");
   }
 
-  if (!header.startsWith(headerPrefix)) {
+  if (!authHeader.toLowerCase().startsWith(headerPrefix)) {
     throw new Error("Invalid authorization header");
   }
 
-  const token = header.slice(headerPrefix.length);
+  const token = authHeader.slice(headerPrefix.length);
 
   return new Promise<jwt.JwtPayload>((resolve, reject) => {
     jwt.verify(token, jwtSecret, (error, jwtPayload) => {
