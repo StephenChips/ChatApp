@@ -10,7 +10,8 @@ import { initPool, runSQLFile } from "./database";
 
 import { initIMSystem } from "./im-system"
 import { PoolConfig } from "pg";
-import { initAuthorization } from "./authorization";
+import { initAuthorization, socketIOAuth } from "./authorization";
+import { initNotification } from "./notification";
 
 export type AppEnv = {
   jwtSecret: string,
@@ -27,26 +28,28 @@ export async function startApp(env: AppEnv) {
   await runSQLFile(resolve(__dirname, "../sql/init.sql"));
   console.log("Database is created.");
 
-  console.log()
+  console.log();
 
-  console.log("Starting the server")
+  console.log("Starting the server");
   const app = new Koa();
-  const router = new Router()
-  app.use(serve(resolve(__dirname, "../public")));
-
-  const httpServer = http.createServer(app.callback())
+  const router = new Router();
+  const httpServer = http.createServer(app.callback());
   const io = new SocketIO.Server(httpServer);
-  initIMSystem(io, env.jwtSecret)
+  
+  io.use(socketIOAuth);
+
+  app.use(serve(resolve(__dirname, "../public")));
+  app.use(koaBody());
+  app.use(router.routes());
+
+  initIMSystem(io);
+  initPool(env.databaseConfig);
+  initAuthorization(router);
+  initNotification(router, io);
+
   httpServer.listen(env.port, () => {
     console.log("The server is started at the port " + env.port);
   })
-
-  initPool(env.databaseConfig)
-
-  initAuthorization(router);
-
-  app.use(koaBody());
-  app.use(router.routes())
 }
 
 function setDefaultValues<T extends object>(object: T, defaultValues: Partial<T>) {

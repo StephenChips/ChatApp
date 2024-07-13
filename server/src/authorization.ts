@@ -3,8 +3,27 @@ import { createHash } from "node:crypto"
 import * as JWT from "jsonwebtoken"
 import * as Router from "koa-router";
 import { jwtSecret } from "../settings";
+import jwt = require("jsonwebtoken")
+import Koa = require("koa")
+import * as SocketIO from "socket.io";
 
 const hash = createHash("sha256");
+
+export type JWTPayload = {
+  sub: number // the userID
+};
+
+declare module "koa" {
+  interface Request extends Koa.BaseRequest {
+    jwt?: { payload: JWTPayload }
+  }
+}
+
+declare module "socket.io" {
+  interface Socket {
+    jwt?: { payload: JWTPayload }
+  }
+}
 
 async function issueJWT(userID: number, password: string) {
   const pool = getPool()
@@ -31,18 +50,37 @@ async function issueJWT(userID: number, password: string) {
   })
 }
 
+async function getJWTPayload(authHeader: string, jwtSecret: string) {
+  const headerPrefix = "bearer ";
+
+  if (!authHeader) {
+    throw new Error("Requires a JWT token");
+  }
+
+  if (!authHeader.toLowerCase().startsWith(headerPrefix)) {
+    throw new Error("Invalid authorization header");
+  }
+
+  const token = authHeader.slice(headerPrefix.length);
+
+  return new Promise<JWTPayload>((resolve, reject) => {
+    jwt.verify(token, jwtSecret, (error, jwtPayload) => {
+      if (error) reject(new Error("Invalid JWT token"));
+      else resolve((jwtPayload as unknown) as JWTPayload);
+    })
+  })
+}
+
 export function initAuthorization(router: Router) {
   router.post("/issueJWT", async (ctx, next) => {
     if (ctx.request.type !== "application/json") {
-      ctx.status = 400;
-      ctx.body = { message: "requires a JSON body" };
-      return next();
+      ctx.throw(400, "Requires a JSON body");
     }
 
-    type PostBody = { userID: number; password: string; }
     ctx.type = "application/json";
-
+    
     try {
+      type PostBody = { userID: number; password: string; }
       const { userID, password } = ctx.request.body as PostBody;
       const token = await issueJWT(userID, password);
       ctx.status = 200;
@@ -52,7 +90,47 @@ export function initAuthorization(router: Router) {
       ctx.status = 400;
       ctx.body = { message: error.message };
     }
-    
+
     return next();
   })
+}
+
+export async function httpAuth(ctx: Koa.Context, next: Koa.Next) {
+  try {
+    const payload = await getJWTPayload(ctx.header.authorization, jwtSecret);
+    ctx.request.jwt = { payload };
+    next();
+  } catch (e) {
+    const error = e as Error;
+    ctx.throw(400, error.message);
+  }
+}
+
+export type UserID = number;
+export const onlineUserSockets = new Map<UserID, SocketIO.Socket>();
+
+export async function socketIOAuth(socket: SocketIO.Socket, next: (err?: Error) => void) {
+  let userID: number;
+
+  try {
+    const authHeader = socket.request.headers["authorization"];
+    const jwtPayload = await getJWTPayload(authHeader, jwtSecret)
+    userID = jwtPayload.sub;
+    socket.jwt.payload = jwtPayload;
+  } catch (e) {
+    next(e as Error)
+    return;
+  }
+
+  if (onlineUserSockets.has(userID)) {
+    next(new Error("User has logged in"));
+    return;
+  }
+
+  onlineUserSockets.set(userID, socket);
+  socket.on("disconnect", () => {
+    onlineUserSockets.delete(userID);
+  });
+
+  next();
 }

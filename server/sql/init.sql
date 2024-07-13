@@ -9,3 +9,11 @@ CREATE TABLE IF NOT EXISTS chatapp.users (
 );
 
 CREATE TABLE IF NOT EXISTS chatapp.default_avatars (url TEXT PRIMARY KEY);
+
+
+CREATE TABLE IF NOT EXISTS chatapp.notifications (
+    id SERIAL PRIMARY KEY,
+    created_time TIMESTAMP,
+    type TEXT,
+    content TEXT
+);
