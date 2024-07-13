@@ -1,17 +1,20 @@
 import { resolve } from "path";
 import * as http from "http";
 import * as Koa from "koa";
+import * as Router from "koa-router"
 import * as serve from "koa-static";
+import { koaBody } from "koa-body"
 import * as SocketIO from "socket.io";
 
 import { initPool, runSQLFile } from "./database";
 
 import { initIMSystem } from "./im-system"
 import { PoolConfig } from "pg";
+import { initAuthorization } from "./authorization";
 
 export type AppEnv = {
   jwtSecret: string,
-  poolConfig: PoolConfig,
+  databaseConfig: PoolConfig,
   port?: number
 }
 
@@ -28,7 +31,9 @@ export async function startApp(env: AppEnv) {
 
   console.log("Starting the server")
   const app = new Koa();
+  const router = new Router()
   app.use(serve(resolve(__dirname, "../public")));
+
   const httpServer = http.createServer(app.callback())
   const io = new SocketIO.Server(httpServer);
   initIMSystem(io, env.jwtSecret)
@@ -36,7 +41,12 @@ export async function startApp(env: AppEnv) {
     console.log("The server is started at the port " + env.port);
   })
 
-  initPool(env.poolConfig)
+  initPool(env.databaseConfig)
+
+  initAuthorization(router);
+
+  app.use(koaBody());
+  app.use(router.routes())
 }
 
 function setDefaultValues<T extends object>(object: T, defaultValues: Partial<T>) {
