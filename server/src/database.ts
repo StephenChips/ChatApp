@@ -7,7 +7,7 @@ export function getPool() {
   return pool;
 }
 
-export function initPool(poolConfig: PoolConfig) {
+export function initDatabasePool(poolConfig: PoolConfig) {
   pool = new Pool(poolConfig);
 }
 

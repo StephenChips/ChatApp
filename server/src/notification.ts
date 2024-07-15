@@ -1,5 +1,4 @@
 import Router = require("koa-router");
-import SocketIO = require("socket.io");
 import { httpAuth, onlineUserSockets } from "./authorization";
 import { getPool } from "./database";
 

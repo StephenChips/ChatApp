@@ -14,7 +14,7 @@ export function createPasswordHash(password: string, salt: string) {
   return hashAlgorithm.digest().toString("base64url");
 }
 
-export function initUserAPI(router: Router) {
+export function initUser(router: Router) {
   const pool = getPool();
 
   router.post("/createUser", requestBodyContentType("application/json"), async (ctx, next) => {
