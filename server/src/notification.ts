@@ -1,9 +1,9 @@
 import Router = require("koa-router");
 import SocketIO = require("socket.io");
-import { httpAuth, onlineUserSockets, socketIOAuth } from "./authorization";
+import { httpAuth, onlineUserSockets } from "./authorization";
 import { getPool } from "./database";
 
-export function initNotification(router: Router, io: SocketIO.Server) {
+export function initNotification(router: Router) {
   router.post("/readNotifications", httpAuth, async (ctx, next) => {
     const pool = getPool();
 

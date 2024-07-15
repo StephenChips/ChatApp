@@ -45,7 +45,8 @@ export async function startApp(env: AppEnv) {
   initIMSystem(io);
   initPool(env.databaseConfig);
   initAuthorization(router);
-  initNotification(router, io);
+  initNotification(router);
+  initUserAPI(router);
 
   httpServer.listen(env.port, () => {
     console.log("The server is started at the port " + env.port);
