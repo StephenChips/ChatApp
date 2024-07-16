@@ -6,6 +6,7 @@ import { jwtSecret } from "../settings";
 import jwt = require("jsonwebtoken")
 import Koa = require("koa")
 import * as SocketIO from "socket.io";
+import { requestBodyContentType } from "./utils";
 
 const hash = createHash("sha256");
 
@@ -72,13 +73,7 @@ async function getJWTPayload(authHeader: string, jwtSecret: string) {
 }
 
 export function initAuthorization(router: Router) {
-  router.post("/issueJWT", async (ctx, next) => {
-    if (ctx.request.type !== "application/json") {
-      ctx.throw(400, "Requires a JSON body");
-    }
-
-    ctx.type = "application/json";
-    
+  router.post("/issueJWT", requestBodyContentType("application/json"), async (ctx, next) => {
     try {
       type PostBody = { userID: number; password: string; }
       const { userID, password } = ctx.request.body as PostBody;

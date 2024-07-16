@@ -1,14 +1,11 @@
 import Router = require("koa-router");
 import { httpAuth, onlineUserSockets } from "./authorization";
 import { getPool } from "./database";
+import { requestBodyContentType } from "./utils";
 
 export function initNotification(router: Router) {
-  router.post("/readNotifications", httpAuth, async (ctx, next) => {
+  router.post("/readNotifications", httpAuth, requestBodyContentType("application/json"), async (ctx, next) => {
     const pool = getPool();
-
-    if (ctx.request.type !== "application/json") {
-      ctx.throw(400, "requires a JSON body");
-    }
 
     const { since } = ctx.request.body;
     const { sub: userID } = ctx.request.jwt.payload;
@@ -17,11 +14,10 @@ export function initNotification(router: Router) {
       [userID, since]
     );
 
-    ctx.type = "application/json";
     ctx.body = result.rows;
     next();
   });
-}
+} 
 
 // TODO the notification may lost, need more in-depth consideration.
 /**

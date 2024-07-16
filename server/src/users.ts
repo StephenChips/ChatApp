@@ -1,9 +1,9 @@
-import { Context } from "koa";
 import Router = require("koa-router");
 import { getPool } from "./database";
 import Crypto = require("node:crypto");
 import { promisify } from "node:util";
 import { httpAuth } from "./authorization";
+import { requestBodyContentType } from "./utils";
 
 const randomBytes = promisify(Crypto.randomBytes);
 
@@ -89,17 +89,3 @@ export function initUser(router: Router) {
   })
 }
 
-function requestBodyContentType(...mimeTypes: [string, ...string[]]) {
-  return function middleware(ctx: Context, next: () => void) {
-    if (!mimeTypes.includes(ctx.request.type)) {
-      ctx.throw(
-        400,
-        mimeTypes.length === 1
-          ? `Requires a ${mimeTypes[0]} body`
-          : `Requires a ${mimeTypes.slice(0, -1).join(", ")} or ${mimeTypes[mimeTypes.length - 1]} body`
-      );
-    } else {
-      next();
-    }
-  }
-}
