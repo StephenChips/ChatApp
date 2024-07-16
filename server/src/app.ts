@@ -6,7 +6,7 @@ import * as serve from "koa-static";
 import { koaBody } from "koa-body"
 import * as SocketIO from "socket.io";
 
-import { initDatabasePool, runSQLFile } from "./database";
+import { getPool, initDatabasePool, runSQLFile } from "./database";
 
 import { initIMSystem } from "./im-system"
 import { PoolConfig } from "pg";

@@ -38,7 +38,7 @@ export function initUser(router: Router) {
     const passwordHash = createPasswordHash(requestBody.password, salt)
 
     const result = await pool.query(
-      "INSERT INTO users (name, avatar_url, password_hash, salt) VALUES ($1, $2, $3, $4) RETURNNING id;",
+      "INSERT INTO users (name, avatar_url, password_hash, salt) VALUES ($1, $2, $3, $4) RETURNING id;",
       [requestBody.name, avatarURL, passwordHash, salt]
     );
     const id = result.rows[0].id;
@@ -48,7 +48,7 @@ export function initUser(router: Router) {
     next();
   });
 
-  router.post("/getUserPublicInfo", requestBodyContentType("application/json"), async (ctx, next) => {
+  router.post("/getUser", requestBodyContentType("application/json"), async (ctx, next) => {
     type RequestBody = { id: number };
     const requerstBody = ctx.request.body as RequestBody;
 
