@@ -6,13 +6,14 @@ import * as serve from "koa-static";
 import { koaBody } from "koa-body"
 import * as SocketIO from "socket.io";
 
-import { getPool, initDatabasePool, runSQLFile } from "./database";
+import { initDatabasePool, runSQLFile } from "./database";
 
 import { initIMSystem } from "./im-system"
 import { PoolConfig } from "pg";
 import { initAuthorization, socketIOAuth } from "./authorization";
 import { initNotification } from "./notification";
 import { initUser } from "./users";
+import initDefaultAvatars from "./default-avatars";
 
 export type AppEnv = {
   jwtSecret: string,
@@ -49,6 +50,7 @@ export async function startApp(env: AppEnv) {
   initAuthorization(router);
   initNotification(router);
   initUser(router);
+  initDefaultAvatars(router);
 
   httpServer.listen(env.port, () => {
     console.log("The server is started at the port " + env.port);
