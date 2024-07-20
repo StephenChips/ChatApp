@@ -4,7 +4,7 @@ import { getPool } from "./database";
 import { requestBodyContentType } from "./utils";
 
 export function initNotification(router: Router) {
-  router.post("/getNotifications", httpAuth, requestBodyContentType("application/json"), async (ctx, next) => {
+  router.post("/api/getNotifications", httpAuth, requestBodyContentType("application/json"), async (ctx, next) => {
     const pool = getPool();
 
     const { since } = ctx.request.body;

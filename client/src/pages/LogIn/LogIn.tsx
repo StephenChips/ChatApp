@@ -22,7 +22,7 @@ const CHATAPP_ID_INPUT_ELEMENT_ID = "chatapp-id";
 const PASSWORD_INPUT_ELEMENT_ID = "password";
 
 export function LogIn() {
-  const { logInToken } = useLogIn();
+  const { hasLoggedIn } = useLogIn();
   const [rememberMe, setRememberMe] = useState(false);
   const [chatAppID, setChatAppID] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +34,7 @@ export function LogIn() {
     text: string;
   } | null>(null);
 
-  if (logInToken !== undefined) {
+  if (hasLoggedIn) {
     return <NavigateEffect to="/" />;
   }
 

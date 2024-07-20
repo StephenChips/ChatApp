@@ -31,17 +31,9 @@ import { useAppDispatch, useAppSelector } from "../../store";
 import { selectAppUser, setAppUser } from "../../store/appUser";
 import React, { useEffect, useState } from "react";
 import { PasswordField } from "../../components/PasswordField";
-
-// Dummy images. Eventually they should be fetched from the beckend.
-import avatar1 from "../../assets/avatar1.svg";
-import avatar2 from "../../assets/avatar2.svg";
-import avatar3 from "../../assets/avatar3.svg";
-import avatar4 from "../../assets/avatar4.svg";
-import avatar5 from "../../assets/avatar5.svg";
-import avatar6 from "../../assets/avatar6.svg";
-import avatar7 from "../../assets/avatar7.svg";
 import { AppAlertActions } from "../../store/appAlert";
 import { useLogIn } from "../../hooks";
+import axios from "axios";
 
 export function Account() {
   const appUser = useAppSelector(selectAppUser)!;
@@ -639,10 +631,6 @@ const VisuallyHiddenInput = styled("input")({
   width: 1,
 });
 
-async function fetchDefaultAvatars() {
-  return [avatar1, avatar2, avatar3, avatar4, avatar5, avatar6, avatar7];
-}
-
 function AvatarButton({
   onClick,
   isSelected,
@@ -681,4 +669,10 @@ function AvatarButton({
       ></Avatar>
     </Box>
   );
+}
+
+async function fetchDefaultAvatars() {
+  type Response = { url: string }[]
+  const response = await axios.post<Response>("/api/getDefaultAvatars");
+  return response.data.map(({ url }) => url);
 }

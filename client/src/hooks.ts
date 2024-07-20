@@ -1,22 +1,55 @@
-import { useAppDispatch, useAppSelector } from "./store";
-import { AppUserActions, selectLogInToken } from "./store/appUser";
+import axios from "axios";
+import { useAppDispatch } from "./store";
+import { AppUserActions } from "./store/appUser";
+import { User } from "./store/modeltypes";
 
 export function useLogIn() {
-  const logInToken = useAppSelector(selectLogInToken);
+  const LOGIN_TOKEN_KEY = "login-token";
   const dispatch = useAppDispatch();
 
-  async function logIn() {}
+  async function logIn(userID: number, password: string, rememberMe = false) {
+    const { jwt } = await getJWT(userID, password);
+    const user = await getUserPublicInfo(userID);
+    dispatch(AppUserActions.setAppUser(user));
+    dispatch(AppUserActions.setLogInToken(jwt));
 
-  async function logout() {
-    // Since we use RESTful auth (JWT), so to logout means deleting the
-    // current token.
-    dispatch(AppUserActions.clearAll());
+    localStorage.removeItem(LOGIN_TOKEN_KEY);
+    sessionStorage.removeItem(LOGIN_TOKEN_KEY);
+
+    if (rememberMe) {
+      localStorage.setItem(LOGIN_TOKEN_KEY, jwt);
+    } else {
+      sessionStorage.setItem(LOGIN_TOKEN_KEY, jwt);
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem(LOGIN_TOKEN_KEY);
+    sessionStorage.removeItem(LOGIN_TOKEN_KEY);
   }
 
   return {
-    logInToken,
     logIn,
     logout,
-    loggedIn: logInToken !== undefined,
+    get logInToken() {
+      return localStorage.getItem(LOGIN_TOKEN_KEY)
+        ?? sessionStorage.getItem(LOGIN_TOKEN_KEY);
+    },
+    get hasLoggedIn () {
+      return this.logInToken !== null;
+    }
   };
+}
+
+async function getJWT(userID: number, password: string) {
+  const response = await axios.post("/api/issueJWT", { userID, password });
+
+  return await response.data as {
+    jwt: string
+  };
+}
+
+async function getUserPublicInfo(userID: number) {
+  const response = await axios.post("/api/getUserPublicInfo", { id: userID });
+  return await response.data as User;
 }

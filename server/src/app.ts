@@ -3,6 +3,7 @@ import * as http from "http";
 import * as Koa from "koa";
 import * as Router from "koa-router"
 import * as serve from "koa-static";
+import mount = require("koa-mount")
 import { koaBody } from "koa-body"
 import * as SocketIO from "socket.io";
 
@@ -38,19 +39,25 @@ export async function startApp(env: AppEnv) {
   const app = new Koa();
   const router = new Router();
   const httpServer = http.createServer(app.callback());
-  const io = new SocketIO.Server(httpServer);
-  
-  io.use(socketIOAuth);
 
-  app.use(serve(resolve(__dirname, "../public")));
-  app.use(koaBody());
-  app.use(router.routes());
+  const io = new SocketIO.Server(httpServer);
+  io.use(socketIOAuth);
+  app.use(koaBody({
+    multipart: true,
+    formidable: {
+      keepExtensions: true
+    }
+  }));
 
   initIMSystem(io);
   initAuthorization(router);
   initNotification(router);
   initUser(router);
   initDefaultAvatars(router);
+
+  app.use(mount("/public", serve(resolve(__dirname, "../public"))));
+  app.use(router.routes());
+  app.use(router.allowedMethods());
 
   httpServer.listen(env.port, () => {
     console.log("The server is started at the port " + env.port);

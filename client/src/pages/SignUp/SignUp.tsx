@@ -9,17 +9,15 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import axios from "axios";
 import { RADIAL_GRADIENT_BACKGROUND } from "../../constants";
 import React, { useEffect, useRef, useState } from "react";
 import { PasswordField } from "../../components/PasswordField";
 import { useNavigate } from "react-router";
-
-import avatar1 from "../../assets/avatar1.svg";
-import { useAppDispatch } from "../../store";
-import { AppUserActions } from "../../store/appUser";
+import { useLogIn } from "../../hooks";
 
 export function SignUp() {
-  const dispatch = useAppDispatch();
+  const { logIn } = useLogIn();
   const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
@@ -208,9 +206,8 @@ export function SignUp() {
     setIsCreatingAccount(true);
 
     try {
-      const { user, loginToken } = await createAccount(username, password);
-      dispatch(AppUserActions.setAppUser(user));
-      dispatch(AppUserActions.setLogInToken(loginToken));
+      const { id } = await createAccount(username, password);
+      await logIn(id, password)
       navigate("/welcome");
     } catch (e) {
       const error = e as Error;
@@ -232,14 +229,14 @@ export function SignUp() {
     }
   }
 
-  async function createAccount(username: string, password: string) {
-    return {
-      user: {
-        id: 1,
-        avatarURL: avatar1,
-        name: username,
-      },
-      loginToken: "123446576",
+  async function createAccount(name: string, password: string) {
+    const response = await axios.post("/api/createUser", { name, password });
+
+    return await response.data as {
+      id: number;
+      name: string;
+      password: string;
+      avatarURL: string;
     };
   }
 }

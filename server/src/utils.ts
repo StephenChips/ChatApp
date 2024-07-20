@@ -1,7 +1,7 @@
-import { Context } from "koa";
+import { Context, Next } from "koa";
 
 export function requestBodyContentType(...mimeTypes: [string, ...string[]]) {
-  return function middleware(ctx: Context, next: () => void) {
+  return function middleware(ctx: Context, next: Next) {
     if (!mimeTypes.includes(ctx.request.type)) {
       ctx.throw(
         400,
@@ -10,7 +10,7 @@ export function requestBodyContentType(...mimeTypes: [string, ...string[]]) {
           : `Requires a ${mimeTypes.slice(0, -1).join(", ")} or ${mimeTypes[mimeTypes.length - 1]} body`
       );
     } else {
-      next();
+      return next();
     }
   }
 }

@@ -7,7 +7,7 @@ import { Context } from "koa";
 export function initContact(route: Router) {
   const pool = getPool();
 
-  route.post("/getContacts", httpAuth, requestBodyContentType("application/json"), async (ctx, next) => {
+  route.post("/api/getContacts", httpAuth, requestBodyContentType("application/json"), async (ctx, next) => {
     type RequestBody = { id: number };
     const requestBody = ctx.request.body as RequestBody;
 
@@ -33,7 +33,7 @@ export function initContact(route: Router) {
     next();
   });
 
-  route.post("/createAddContactRequest", httpAuth, async (ctx, next) => {
+  route.post("/api/createAddContactRequest", httpAuth, async (ctx, next) => {
     type RequestBody = { recipient_id: number };
     const requestBody = ctx.request.body as RequestBody;
 
@@ -85,9 +85,9 @@ export function initContact(route: Router) {
     }
   });
 
-  route.post("/agreeAddContactRequest", httpAuth, setAddContactRequestStatus("agreed"));
+  route.post("/api/agreeAddContactRequest", httpAuth, setAddContactRequestStatus("agreed"));
 
-  route.post("/rejectAddContactRequest", httpAuth, setAddContactRequestStatus("rejected"));
+  route.post("/api/rejectAddContactRequest", httpAuth, setAddContactRequestStatus("rejected"));
 
   function setAddContactRequestStatus(status: "agreed" | "rejected") {
     return async (ctx: Context, next: () => void) => {

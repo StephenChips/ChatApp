@@ -1,3 +1,4 @@
+import Crypto = require("crypto");
 import { getPool } from "./database";
 import { createHash } from "node:crypto"
 import * as JWT from "jsonwebtoken"
@@ -8,7 +9,6 @@ import Koa = require("koa")
 import * as SocketIO from "socket.io";
 import { requestBodyContentType } from "./utils";
 
-const hash = createHash("sha256");
 
 export type JWTPayload = {
   sub: number // the userID
@@ -29,7 +29,7 @@ declare module "socket.io" {
 async function issueJWT(userID: number, password: string) {
   const pool = getPool()
 
-  const result = await pool.query("SELECT password_hash, salt FROM users WHERE userID = $1;", [userID]);
+  const result = await pool.query("SELECT password_hash, salt FROM chatapp.users WHERE id = $1;", [userID]);
 
   if (result.rowCount === 0) {
     throw new Error("No such user");
@@ -37,9 +37,7 @@ async function issueJWT(userID: number, password: string) {
 
   const { password_hash, salt } = result.rows[0];
 
-  hash.update(password + salt);
-
-  if (hash.digest("hex") !== password_hash) {
+  if (createPasswordHash(password, salt) !== password_hash) {
     throw new Error("Password is not correct");
   }
 
@@ -73,7 +71,7 @@ async function getJWTPayload(authHeader: string, jwtSecret: string) {
 }
 
 export function initAuthorization(router: Router) {
-  router.post("/issueJWT", requestBodyContentType("application/json"), async (ctx, next) => {
+  router.post("/api/issueJWT", requestBodyContentType("application/json"), async (ctx, next) => {
     try {
       type PostBody = { userID: number; password: string; }
       const { userID, password } = ctx.request.body as PostBody;
@@ -94,7 +92,7 @@ export async function httpAuth(ctx: Koa.Context, next: Koa.Next) {
   try {
     const payload = await getJWTPayload(ctx.header.authorization, jwtSecret);
     ctx.request.jwt = { payload };
-    next();
+    return next();
   } catch (e) {
     const error = e as Error;
     ctx.throw(400, error.message);
@@ -128,4 +126,10 @@ export async function socketIOAuth(socket: SocketIO.Socket, next: (err?: Error) 
   });
 
   next();
+}
+
+function createPasswordHash(password: string, salt: string) {
+  const hashAlgorithm = Crypto.createHash("sha256");
+  hashAlgorithm.update(password + salt)
+  return hashAlgorithm.digest().toString("base64url");
 }

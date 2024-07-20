@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS chatapp.users (
     name TEXT,
     avatar_url TEXT,
     password_hash TEXT,
-    password_salt CHARACTER(32)
+    salt CHARACTER(32)
 );
 
 CREATE TABLE IF NOT EXISTS chatapp.default_avatars (url TEXT PRIMARY KEY);

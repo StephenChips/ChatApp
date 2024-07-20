@@ -17,16 +17,9 @@ import { selectAppUser, setAppUser } from "../../store/appUser";
 import { useAppDispatch, useAppSelector } from "../../store";
 import { useEffect, useState } from "react";
 import { User } from "../../store/modeltypes";
-
-// Dummy images. Eventually they should be fetched from the beckend.
-import avatar1 from "../../assets/avatar1.svg";
-import avatar2 from "../../assets/avatar2.svg";
-import avatar3 from "../../assets/avatar3.svg";
-import avatar4 from "../../assets/avatar4.svg";
-import avatar5 from "../../assets/avatar5.svg";
-import avatar6 from "../../assets/avatar6.svg";
-import avatar7 from "../../assets/avatar7.svg";
 import { useNavigate } from "react-router";
+import axios from "axios";
+import { useLogIn } from "../../hooks";
 
 type AvatarSource =
   | { from: "url"; url: string }
@@ -35,6 +28,7 @@ type AvatarSource =
 export function Welcome() {
   const dispatch = useAppDispatch();
   const appUser = useAppSelector(selectAppUser);
+  const { logInToken } = useLogIn();
   const [cardBeingDisplayed, displayCard] = useState<
     "welcome-card" | "change-avatar"
   >("welcome-card");
@@ -87,7 +81,7 @@ export function Welcome() {
   );
 
   async function onChangeAvatar(newAvatarSource: AvatarSource) {
-    const { url } = await updateUserAvatar(newAvatarSource);
+    const { url } = await updateUserAvatar(newAvatarSource, logInToken!);
 
     dispatch(
       setAppUser({
@@ -443,11 +437,27 @@ const VisuallyHiddenInput = styled("input")({
 });
 
 async function fetchDefaultAvatars() {
-  return [avatar1, avatar2, avatar3, avatar4, avatar5, avatar6, avatar7];
+  type Response = { url: string }[]
+  const response = await axios.post<Response>("/api/getDefaultAvatars");
+  return response.data.map(({ url }) => url);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function updateUserAvatar(_avatarSource: AvatarSource) {
-  // TODO to be implemented
-  return { url: "" };
+async function updateUserAvatar(avatarSource: AvatarSource, jwt: string) {
+  const formData = new FormData();
+
+  if (avatarSource.from === "url") {
+    formData.set("url", avatarSource.url);
+  } else {
+    formData.set("imageFile", avatarSource.imageFile);
+  }
+
+  const response = await axios<{ url: string }>("/api/setUserAvatar", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${jwt}`
+    },
+    data: formData
+  });
+
+  return response.data;
 }

@@ -4,12 +4,14 @@ import Crypto = require("node:crypto");
 import { promisify } from "node:util";
 import { httpAuth } from "./authorization";
 import { requestBodyContentType } from "./utils";
+import formidable = require("formidable");
+import { basename, dirname, extname, join } from "node:path";
+import { copyFile, mkdir, rename, unlink } from "node:fs/promises";
 
 const randomBytes = promisify(Crypto.randomBytes);
 
-const hashAlgorithm = Crypto.createHash("sha256");
-
 export function createPasswordHash(password: string, salt: string) {
+  const hashAlgorithm = Crypto.createHash("sha256");
   hashAlgorithm.update(password + salt)
   return hashAlgorithm.digest().toString("base64url");
 }
@@ -17,7 +19,7 @@ export function createPasswordHash(password: string, salt: string) {
 export function initUser(router: Router) {
   const pool = getPool();
 
-  router.post("/createUser", requestBodyContentType("application/json"), async (ctx, next) => {
+  router.post("/api/createUser", requestBodyContentType("application/json"), async (ctx) => {
     type RequestBody = {
       name: string;
       password: string;
@@ -28,8 +30,7 @@ export function initUser(router: Router) {
 
     let avatarURL: string;
     if (requestBody.avatarURL === undefined) {
-      const result = await pool.query("SELECT url FROM default_avatars LIMITS 1;");
-      avatarURL = result.rows[0].url;
+      avatarURL = "/public/default-avatars/avatar1.svg";
     } else {
       avatarURL = requestBody.avatarURL;
     }
@@ -38,54 +39,79 @@ export function initUser(router: Router) {
     const passwordHash = createPasswordHash(requestBody.password, salt)
 
     const result = await pool.query(
-      "INSERT INTO users (name, avatar_url, password_hash, salt) VALUES ($1, $2, $3, $4) RETURNING id;",
+      "INSERT INTO chatapp.users (name, avatar_url, password_hash, salt) VALUES ($1, $2, $3, $4) RETURNING id;",
       [requestBody.name, avatarURL, passwordHash, salt]
     );
-    const id = result.rows[0].id;
 
-    ctx.body = { id };
-
-    next();
+    ctx.body = { id: result.rows[0].id };
   });
 
-  router.post("/getUser", requestBodyContentType("application/json"), async (ctx, next) => {
+  router.post("/api/getUserPublicInfo", requestBodyContentType("application/json"), async (ctx) => {
     type RequestBody = { id: number };
     const requerstBody = ctx.request.body as RequestBody;
 
-    const result = await pool.query("SELECT id, name, avatar_url FROM users WHERE id = $1;"[requerstBody.id]);
+    const result = await pool.query("SELECT id, name, avatar_url FROM chatapp.users WHERE id = $1;", [requerstBody.id]);
     if (result.rows.length === 0) ctx.throw(400, "No such user");
-    const user = result.rows[0];
-    ctx.body = user;
+    const { id, name, avatar_url } = result.rows[0];
 
-    next();
+    ctx.body = {
+      id,
+      name,
+      avatarURL: avatar_url
+    };
   });
 
-  router.post("/setUserName", httpAuth, requestBodyContentType("application/json"), async (ctx, next) => {
+  router.post("/api/setUserName", httpAuth, requestBodyContentType("application/json"), async (ctx, next) => {
     type RequestBody = { id: number, name: string };
     const { id, name } = ctx.request.body as RequestBody;
-    await pool.query("UPDATE users SET name = $1 WHERE id = $2", [name, id]);
+    await pool.query("UPDATE chatapp.users SET name = $1 WHERE id = $2", [name, id]);
     next();
   })
-  
-  router.post("/setUserAvatarURL", httpAuth, requestBodyContentType("application/json"), async (ctx, next) => {
-    type RequestBody = { id: number, avatarURL: string };
-    const { id, avatarURL } = ctx.request.body as RequestBody;
-    await pool.query("UPDATE users SET avatar_url = $1 WHERE id = $2", [avatarURL, id]);
-    next();
+
+  router.post("/api/setUserAvatar", httpAuth, requestBodyContentType("multipart/form-data"), async (ctx) => {
+    type RequestBody = { url?: string };
+
+    let { url } = ctx.request.body as RequestBody;
+    const id = ctx.request.jwt.payload.sub;
+
+    const multipart = ctx.request.files["imageFile"];
+    let imageFile: formidable.File = Array.isArray(multipart) ? multipart[0] : multipart;
+
+    if (!url && !imageFile) {
+      ctx.throw(400, "You must send a URL or an image file to set your avatar.");
+    }
+    
+    if (imageFile) {
+      const MAX_FILESIZE_KB = 1000;
+      if (imageFile.size > MAX_FILESIZE_KB * 1000) {
+        ctx.throw(400, "The image uploaded is too large, the maximum size is " + MAX_FILESIZE_KB + " KB.");
+      }
+
+      const storePath = join(__dirname, `../public/user/${id}/user-avatar`);
+
+      await mkdir(dirname(storePath), { recursive: true });
+      await copyFile(imageFile.filepath, storePath);
+      await unlink(imageFile.filepath);
+      
+      url = `/public/user/${id}/user-avatar`;
+    }
+
+    await pool.query("UPDATE chatapp.users SET avatar_url = $1 WHERE id = $2", [url, id]);
+
+    ctx.body = { url };
   })
-  
-  router.post("/setUserPassword", httpAuth, requestBodyContentType("application/json"), async (ctx, next) => {
+
+  router.post("/api/setUserPassword", httpAuth, requestBodyContentType("application/json"), async (ctx, next) => {
     type RequestBody = { id: number, password: string };
     const { id, password } = ctx.request.body as RequestBody;
 
-    const result = await pool.query("SELECT salt FROM users WHERE id = $1", [id]);
+    const result = await pool.query("SELECT salt FROM chatapp.users WHERE id = $1", [id]);
     if (result.rows.length === 0) ctx.throw(400, "No such user");
     const salt = result.rows[0].salt;
 
     const passwordHash = createPasswordHash(password, salt);
-    await pool.query("UPDATE users SET name = $1 WHERE id = $2", [passwordHash, id]);
+    await pool.query("UPDATE chatapp.users SET name = $1 WHERE id = $2", [passwordHash, id]);
 
     next();
   })
 }
-
