@@ -62,8 +62,9 @@ export function initUser(router: Router) {
   });
 
   router.post("/api/setUserName", httpAuth, requestBodyContentType("application/json"), async (ctx, next) => {
-    type RequestBody = { id: number, name: string };
-    const { id, name } = ctx.request.body as RequestBody;
+    type RequestBody = { name: string };
+    const id = ctx.request.jwt.payload.sub;
+    const { name } = ctx.request.body as RequestBody;
     await pool.query("UPDATE chatapp.users SET name = $1 WHERE id = $2", [name, id]);
     next();
   })
@@ -102,8 +103,10 @@ export function initUser(router: Router) {
   })
 
   router.post("/api/setUserPassword", httpAuth, requestBodyContentType("application/json"), async (ctx, next) => {
-    type RequestBody = { id: number, password: string };
-    const { id, password } = ctx.request.body as RequestBody;
+    type RequestBody = { password: string };
+
+    const id = ctx.request.jwt.payload.sub;
+    const { password } = ctx.request.body as RequestBody;
 
     const result = await pool.query("SELECT salt FROM chatapp.users WHERE id = $1", [id]);
     if (result.rows.length === 0) ctx.throw(400, "No such user");

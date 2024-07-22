@@ -1,6 +1,6 @@
 import { configureStore, ThunkAction, UnknownAction } from "@reduxjs/toolkit";
 import contactsReducer, { setAllContacts } from "./contacts";
-import appUsersReducer from "./appUser";
+import appUsersReducer, { AppUserThunks } from "./appUser";
 import notificationsReducer, { NotificationActions } from "./notifications";
 import deleteUserDialogReducer from "./deleteUserDialog";
 import appAlertReducer from "./appAlert";
@@ -107,7 +107,7 @@ async function fetchNotifications(): Promise<Notification[]> {
 }
 
 export function initializeStore(): ThunkAction<
-  void,
+  Promise<void>,
   RootState,
   unknown,
   UnknownAction
@@ -130,6 +130,8 @@ export function initializeStore(): ThunkAction<
         ),
       }),
     );
+
+    await dispatch(AppUserThunks.initStore());
 
     storeHasInitialized = true;
   };

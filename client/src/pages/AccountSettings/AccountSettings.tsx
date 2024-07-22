@@ -28,22 +28,22 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../../store";
-import { selectAppUser, setAppUser } from "../../store/appUser";
+import { AppUserThunks, AvatarSource, selectAppUser } from "../../store/appUser";
 import React, { useEffect, useState } from "react";
 import { PasswordField } from "../../components/PasswordField";
 import { AppAlertActions } from "../../store/appAlert";
-import { useLogIn } from "../../hooks";
 import axios from "axios";
 
 export function Account() {
-  const appUser = useAppSelector(selectAppUser)!;
+  const appUser = useAppSelector(selectAppUser)
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { logout } = useLogIn();
 
   const [isChangingUsername, setIsChangingUsername] = useState(false);
   const [isChangingAvatar, setIsChangingAvatar] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  if (!appUser) return <></>;
 
   return (
     <>
@@ -93,7 +93,7 @@ export function Account() {
               <ListItemButton onClick={() => setIsChangingPassword(true)}>
                 <ListItemText primary="Change Password" />
               </ListItemButton>
-              <ListItemButton onClick={logout}>
+              <ListItemButton onClick={() => { dispatch(AppUserThunks.logOut()); }}>
                 <ListItemIcon>
                   <Logout />
                 </ListItemIcon>
@@ -131,14 +131,7 @@ export function Account() {
     setIsChangingUsername(false);
 
     try {
-      await updateUsername(newUsername);
-
-      dispatch(
-        setAppUser({
-          ...appUser,
-          name: newUsername,
-        }),
-      );
+      await dispatch(AppUserThunks.setUserName(newUsername));
 
       dispatch(
         AppAlertActions.show({
@@ -161,7 +154,7 @@ export function Account() {
 
     try {
       await updateUserPassword(newPassword);
-      logout();
+      dispatch(AppUserThunks.logOut());
     } catch {
       dispatch(
         AppAlertActions.show({
@@ -173,15 +166,7 @@ export function Account() {
   }
 
   async function onSubmitAvatarChanged(newAvatarSource: AvatarSource) {
-    const { url } = await updateUserAvatar(newAvatarSource);
-
-    dispatch(
-      setAppUser({
-        ...appUser,
-        avatarURL: url,
-      }),
-    );
-
+    await dispatch(AppUserThunks.setUserAvatar(newAvatarSource));
     dispatch(
       AppAlertActions.show({
         alertText: "Your avatar has been changed.",
@@ -368,10 +353,6 @@ function ChangePasswordDialog({
     </Dialog>
   );
 }
-
-type AvatarSource =
-  | { from: "url"; url: string }
-  | { from: "uploaded-image"; imageFile: File };
 
 function ChangeAvatarDialog({
   open,

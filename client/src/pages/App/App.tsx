@@ -37,7 +37,7 @@ import { NotificationActions } from "../../store/notifications";
 import { DeleteUserDialogActions } from "../../store/deleteUserDialog";
 import { AppAlert } from "./components/AppAlert/AppAlert";
 import { NavigateEffect } from "../../components/NavigateEffect";
-import { useLogIn } from "../../hooks";
+import { selectHasLoggedIn } from "../../store/appUser";
 
 export type MainPageContext = {
   currentContact?: Contact;
@@ -95,6 +95,8 @@ export function App() {
   currentContactUserIDRef.current = currentContactUserID;
 
   const store = useAppStore();
+
+  const hasLoggedIn = useAppSelector((state) => selectHasLoggedIn(state));
   const contacts = useAppSelector((state) => selectAllContacts(state));
   const currentContact: Contact | undefined = useAppSelector((state) => {
     if (currentContactUserID === undefined) return undefined;
@@ -114,10 +116,6 @@ export function App() {
   };
 
   useEffect(() => {
-    dispatch(initializeStore());
-  }, []);
-
-  useEffect(() => {
     document.addEventListener("keydown", closeMessageWindowAfterPressingEscape);
 
     return () => {
@@ -128,7 +126,6 @@ export function App() {
     };
   }, []);
 
-  const { hasLoggedIn } = useLogIn();
   if (!hasLoggedIn) {
     return <NavigateEffect to="/log-in" replace />;
   }

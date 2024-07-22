@@ -8,25 +8,23 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useLogIn } from "../../hooks";
 import { NavigateEffect } from "../../components/NavigateEffect";
 import { useState } from "react";
-import { useAppDispatch } from "../../store";
-import { AppUserActions } from "../../store/appUser";
-import { LOCAL_STORAGE_AUTH_TOKEN_KEY } from "../../store/appUser";
 import { useNavigate } from "react-router";
 import { RADIAL_GRADIENT_BACKGROUND } from "../../constants";
 import { PasswordField } from "../../components/PasswordField";
+import { useAppDispatch, useAppSelector } from "../../store";
+import { AppUserThunks, selectHasLoggedIn } from "../../store/appUser";
 
 const CHATAPP_ID_INPUT_ELEMENT_ID = "chatapp-id";
 const PASSWORD_INPUT_ELEMENT_ID = "password";
 
 export function LogIn() {
-  const { hasLoggedIn } = useLogIn();
-  const [rememberMe, setRememberMe] = useState(false);
-  const [chatAppID, setChatAppID] = useState("");
-  const [password, setPassword] = useState("");
   const dispatch = useAppDispatch();
+  const hasLoggedIn = useAppSelector(selectHasLoggedIn);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [userID, setUserID] = useState("");
+  const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
   const [alertContent, setAlertContent] = useState<{
@@ -77,13 +75,14 @@ export function LogIn() {
             flexDirection: "column",
             flex: 1,
           }}
-          onSubmit={onLoggingIn}
+          onSubmit={onLogIn}
         >
           <Typography variant="h5" marginBottom="auto">
             Please Log In
           </Typography>
           <TextField
             required
+            autoComplete="off"
             id={CHATAPP_ID_INPUT_ELEMENT_ID}
             label="ChatApp ID"
             variant="outlined"
@@ -91,9 +90,10 @@ export function LogIn() {
             sx={{
               marginBottom: "15px",
             }}
-            value={chatAppID}
+            value={userID === null ? "" : userID.toString()}
             onChange={(e) => {
-              setChatAppID(e.target.value);
+              const val = e.target.value;
+              setUserID(val);
               e.target.setCustomValidity("");
             }}
             onInvalid={(e) => {
@@ -109,6 +109,7 @@ export function LogIn() {
             sx={{
               marginBottom: "5px",
             }}
+            autoComplete="off"
             fullWidth
             value={password}
             onChange={(e) => {
@@ -148,27 +149,18 @@ export function LogIn() {
 
   /* FUNCTIONS */
 
-  async function onLoggingIn() {
+  async function onLogIn(e: React.FormEvent) {
+    e.preventDefault();
+
     try {
-      const token = await HttpRequests.getAuthToken(chatAppID, password);
-      dispatch(AppUserActions.setLogInToken(token));
-      if (rememberMe) {
-        localStorage.setItem(LOCAL_STORAGE_AUTH_TOKEN_KEY, token);
-      }
+      await dispatch(AppUserThunks.logIn({
+        userID,
+        password,
+        rememberMe
+      })).unwrap();
     } catch (e) {
       const error = e as Error;
-      switch (error.message) {
-        case "no such user":
-          showAlert("error", "No such user, please check your ChatApp ID.");
-          break;
-        case "incorrect password":
-          showAlert("error", "The password isn't correct.");
-          break;
-        default:
-          showAlert("error", "Unknown error");
-          console.error(error);
-          break;
-      }
+      showAlert("error", error.message);
     }
   }
 
@@ -176,9 +168,3 @@ export function LogIn() {
     setAlertContent({ severity, text });
   }
 }
-
-const HttpRequests = {
-  async getAuthToken(chatAppID: string, password: string) {
-    return "dasf123123rwsd";
-  },
-};

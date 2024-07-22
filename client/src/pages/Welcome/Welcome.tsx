@@ -13,13 +13,12 @@ import {
 import { RADIAL_GRADIENT_BACKGROUND } from "../../constants";
 import { ArrowForward, Delete, Edit } from "@mui/icons-material";
 import { NavigateEffect } from "../../components/NavigateEffect";
-import { selectAppUser, setAppUser } from "../../store/appUser";
+import { AppUserThunks, selectAppUser } from "../../store/appUser";
 import { useAppDispatch, useAppSelector } from "../../store";
 import { useEffect, useState } from "react";
 import { User } from "../../store/modeltypes";
 import { useNavigate } from "react-router";
 import axios from "axios";
-import { useLogIn } from "../../hooks";
 
 type AvatarSource =
   | { from: "url"; url: string }
@@ -28,7 +27,6 @@ type AvatarSource =
 export function Welcome() {
   const dispatch = useAppDispatch();
   const appUser = useAppSelector(selectAppUser);
-  const { logInToken } = useLogIn();
   const [cardBeingDisplayed, displayCard] = useState<
     "welcome-card" | "change-avatar"
   >("welcome-card");
@@ -81,15 +79,7 @@ export function Welcome() {
   );
 
   async function onChangeAvatar(newAvatarSource: AvatarSource) {
-    const { url } = await updateUserAvatar(newAvatarSource, logInToken!);
-
-    dispatch(
-      setAppUser({
-        ...appUser!,
-        avatarURL: url,
-      }),
-    );
-
+    await dispatch(AppUserThunks.setUserAvatar(newAvatarSource));
     displayCard("welcome-card");
   }
 }
@@ -440,24 +430,4 @@ async function fetchDefaultAvatars() {
   type Response = { url: string }[]
   const response = await axios.post<Response>("/api/getDefaultAvatars");
   return response.data.map(({ url }) => url);
-}
-
-async function updateUserAvatar(avatarSource: AvatarSource, jwt: string) {
-  const formData = new FormData();
-
-  if (avatarSource.from === "url") {
-    formData.set("url", avatarSource.url);
-  } else {
-    formData.set("imageFile", avatarSource.imageFile);
-  }
-
-  const response = await axios<{ url: string }>("/api/setUserAvatar", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${jwt}`
-    },
-    data: formData
-  });
-
-  return response.data;
 }

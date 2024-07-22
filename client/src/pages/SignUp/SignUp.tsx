@@ -14,10 +14,11 @@ import { RADIAL_GRADIENT_BACKGROUND } from "../../constants";
 import React, { useEffect, useRef, useState } from "react";
 import { PasswordField } from "../../components/PasswordField";
 import { useNavigate } from "react-router";
-import { useLogIn } from "../../hooks";
+import { useAppDispatch } from "../../store";
+import { AppUserThunks } from "../../store/appUser";
 
 export function SignUp() {
-  const { logIn } = useLogIn();
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
@@ -40,7 +41,7 @@ export function SignUp() {
   type SnackbarState = "hidden" | "will-be-visible" | "visible";
   const [snackbarState, setSnackbarState] = useState<SnackbarState>("hidden");
   const snackbarStateRef = useRef<SnackbarState>();
-  const timeoutIDRef = useRef<number>();
+  const timeoutIDRef = useRef<ReturnType<typeof setTimeout>>();
   snackbarStateRef.current = snackbarState;
 
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
@@ -206,8 +207,8 @@ export function SignUp() {
     setIsCreatingAccount(true);
 
     try {
-      const { id } = await createAccount(username, password);
-      await logIn(id, password)
+      const { id: userID } = await createAccount(username, password);
+      dispatch(AppUserThunks.logIn({ userID, password, rememberMe: false }));
       navigate("/welcome");
     } catch (e) {
       const error = e as Error;

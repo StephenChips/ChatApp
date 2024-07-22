@@ -8,6 +8,7 @@ import jwt = require("jsonwebtoken")
 import Koa = require("koa")
 import * as SocketIO from "socket.io";
 import { requestBodyContentType } from "./utils";
+import { QueryResult } from "pg";
 
 
 export type JWTPayload = {
@@ -24,29 +25,6 @@ declare module "socket.io" {
   interface Socket {
     jwt?: { payload: JWTPayload }
   }
-}
-
-async function issueJWT(userID: number, password: string) {
-  const pool = getPool()
-
-  const result = await pool.query("SELECT password_hash, salt FROM chatapp.users WHERE id = $1;", [userID]);
-
-  if (result.rowCount === 0) {
-    throw new Error("No such user");
-  }
-
-  const { password_hash, salt } = result.rows[0];
-
-  if (createPasswordHash(password, salt) !== password_hash) {
-    throw new Error("Password is not correct");
-  }
-
-  return new Promise((resolve, reject) => {
-    JWT.sign({ sub: userID }, jwtSecret, { algorithm: "HS256" }, (error, token) => {
-      if (error) reject(error);
-      else resolve(token)
-    })
-  })
 }
 
 async function getJWTPayload(authHeader: string, jwtSecret: string) {
@@ -73,11 +51,49 @@ async function getJWTPayload(authHeader: string, jwtSecret: string) {
 export function initAuthorization(router: Router) {
   router.post("/api/issueJWT", requestBodyContentType("application/json"), async (ctx, next) => {
     try {
-      type PostBody = { userID: number; password: string; }
+      type PostBody = { userID: string; password: string; }
       const { userID, password } = ctx.request.body as PostBody;
-      const token = await issueJWT(userID, password);
+
+      if (!userID.match(/^\d+$/)) {
+        ctx.throw(400, "No such user");
+      }
+
+      const pool = getPool()
+      let result: QueryResult;
+
+      try {
+        result = await pool.query("SELECT password_hash, salt FROM chatapp.users WHERE id = $1;", [userID]);
+      } catch (e) {
+        // See https://www.postgresql.org/docs/12/errcodes-appendix.html for error codes' meaning.
+        // 22003 stands for numeric_value_out_of_range.
+
+        if (e.code === "22003") {
+          ctx.throw(400, "No such user");
+        } else {
+          console.error(e);
+          ctx.throw(500, e);
+        }
+      }
+
+      if (result.rowCount === 0) {
+        ctx.throw(400, "No such user");
+      }
+
+      const { password_hash, salt } = result.rows[0];
+
+      if (createPasswordHash(password, salt) !== password_hash) {
+        throw ctx.throw("Password is not correct");
+      }
+
+      const jwt: string = await new Promise((resolve, reject) => {
+        JWT.sign({ sub: userID }, jwtSecret, { algorithm: "HS256" }, (error, token) => {
+          if (error) reject(error);
+          else resolve(token)
+        })
+      })
+
       ctx.status = 200;
-      ctx.body = { jwt: token };
+      ctx.body = { jwt };
     } catch (e) {
       const error = e as Error
       ctx.status = 400;

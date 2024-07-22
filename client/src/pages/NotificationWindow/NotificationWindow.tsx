@@ -17,10 +17,12 @@ import { selectAppUser } from "../../store/appUser";
 
 function NotificationItem({ notification }: { notification: Notification }) {
   const dispatch = useAppDispatch();
-  const appUser = useAppSelector(selectAppUser)!;
+  const appUser = useAppSelector(selectAppUser);
   const isNew = useAppSelector((state) =>
     isNotificationNew(state, notification),
   );
+
+  if (!appUser) return <></>
 
   let notificationMessage: JSX.Element;
   let statusElement: JSX.Element | null = null;

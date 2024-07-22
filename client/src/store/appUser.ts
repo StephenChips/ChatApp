@@ -1,52 +1,190 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { RootState } from ".";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { AppDispatch, RootState } from ".";
+import axios, { AxiosError, AxiosResponse } from "axios";
 import { User } from "./modeltypes";
 
+const LOGIN_TOKEN_KEY = "login-token";
+
+function decodeJWT(token: string) {
+  const base64Url = token.split(".")[1];
+  const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+  const jsonPayload = decodeURIComponent(
+    window
+      .atob(base64)
+      .split("")
+      .map(function (c) {
+        return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+      })
+      .join(""),
+  );
+
+  return JSON.parse(jsonPayload);
+}
+
+export type AvatarSource =
+  | { from: "url"; url: string }
+  | { from: "uploaded-image"; imageFile: File };
+
 export type AppUserStore = {
-  appUser?: User;
-  logInToken?: string;
+  logInToken: string | null;
+  appUser: User | null;
 };
-
-// const initialState: AppUserStore = {
-//   appUser: {
-//     id: 0,
-//     name: "John Wick",
-//     avatarURL:
-//       "https://fastly.picsum.photos/id/469/50/50.jpg?hmac=Wf4YHv-NPz_PHpK4sTzxM9tro8-_pomifQGnTv15x1E",
-//   },
-//   logInToken: "12344566785433456",
-// };
-
-export const LOCAL_STORAGE_AUTH_TOKEN_KEY = "chatapp-auth-token";
 
 const initialState: AppUserStore = {
-  logInToken: localStorage.getItem(LOCAL_STORAGE_AUTH_TOKEN_KEY) ?? undefined,
+  logInToken: null,
+  appUser: null,
 };
 
-const usersSlice = createSlice({
+const appUser = createSlice({
   name: "appUser",
-  initialState,
+  initialState: initialState as AppUserStore,
   reducers: {
-    setAppUser(state, { payload: appUser }: PayloadAction<User>) {
-      state.appUser = appUser;
-    },
-
-    setLogInToken(state, { payload: logInToken }: PayloadAction<string>) {
+    setLogInToken(
+      state,
+      { payload: logInToken }: PayloadAction<string | null>,
+    ) {
       state.logInToken = logInToken;
     },
-
-    clearAll() {
-      return {};
+    setAppUser(state, { payload: user }: PayloadAction<User | null>) {
+      state.appUser = user;
+    },
+    setAppUserName(state, { payload: newName }: PayloadAction<string>) {
+      if (!state.appUser) return;
+      state.appUser.name = newName;
+    },
+    setAppUserAvatarURL(state, { payload: avatarURL }: PayloadAction<string>) {
+      if (!state.appUser) return;
+      state.appUser.avatarURL = avatarURL;
     },
   },
 });
 
-export const selectAppUser = (state: RootState) => state.appUser.appUser;
+export default appUser.reducer;
 
 export const selectLogInToken = (state: RootState) => state.appUser.logInToken;
+export const selectAppUser = (state: RootState) => state.appUser.appUser;
+export const selectHasLoggedIn = (state: RootState) =>
+  !!selectLogInToken(state);
 
-export const { setAppUser } = usersSlice.actions;
+export const AppUserThunks = {
+  initStore: createAsyncThunk("/appUser/initStore", async (_, { dispatch }) => {
+    let logInToken = localStorage.getItem(LOGIN_TOKEN_KEY);
+    if (logInToken === null) {
+      logInToken = sessionStorage.getItem(LOGIN_TOKEN_KEY);
+    }
 
-export const AppUserActions = usersSlice.actions;
+    dispatch(appUser.actions.setLogInToken(logInToken));
 
-export default usersSlice.reducer;
+    if (logInToken !== null) {
+      const { sub: id } = decodeJWT(logInToken);
+      const { data: user } = await axios.post("/api/getUserPublicInfo", { id });
+      dispatch(appUser.actions.setAppUser(user));
+    }
+  }),
+
+  logIn: createAsyncThunk(
+    "/appUser/logIn",
+    async (
+      {
+        userID,
+        password,
+        rememberMe,
+      }: { userID: string; password: string; rememberMe?: boolean },
+      { dispatch },
+    ) => {
+      let response: AxiosResponse;
+
+      try {
+        response = await axios.post("/api/issueJWT", { userID, password });
+      } catch (e) {
+        const error = e as AxiosError;
+        if (error.status === 500) console.error(error);
+        const data = error.response!.data as { message: string };
+        throw new Error(data.message);
+      }
+
+      console.log(response);
+      const { jwt: logInToken } = response.data as { jwt: string };
+
+      localStorage.removeItem(LOGIN_TOKEN_KEY);
+      sessionStorage.removeItem(LOGIN_TOKEN_KEY);
+
+      if (rememberMe) {
+        localStorage.setItem(LOGIN_TOKEN_KEY, logInToken);
+      } else {
+        sessionStorage.setItem(LOGIN_TOKEN_KEY, logInToken);
+      }
+
+      dispatch(appUser.actions.setLogInToken(logInToken));
+
+      const { data: user } = await axios.post("/api/getUserPublicInfo", {
+        id: userID,
+      });
+      dispatch(appUser.actions.setAppUser(user));
+    },
+  ),
+
+  logOut: createAsyncThunk("/appUser/logOut", (_, { dispatch }) => {
+    localStorage.removeItem(LOGIN_TOKEN_KEY);
+    sessionStorage.removeItem(LOGIN_TOKEN_KEY);
+    dispatch(appUser.actions.setLogInToken(null));
+    dispatch(appUser.actions.setAppUser(null));
+  }),
+
+  setUserName: createAsyncThunk(
+    "/appUser/setUserName",
+    async (name: string, ThunkAPI) => {
+      const dispatch = ThunkAPI.dispatch as AppDispatch;
+      const getState = ThunkAPI.getState as () => RootState;
+
+      const logInToken = selectLogInToken(getState());
+
+      const headers: Record<string, string> = {};
+      if (logInToken !== null) {
+        headers["Authorization"] = `Bearer ${logInToken}`;
+      }
+
+      await axios("/api/setUserName", {
+        method: "POST",
+        headers,
+        data: { name },
+      });
+
+      dispatch(appUser.actions.setAppUserName(name));
+    },
+  ),
+
+  setUserAvatar: createAsyncThunk(
+    "/appUser/setUserAvatar",
+    async (avatarSource: AvatarSource, ThunkAPI) => {
+      const dispatch = ThunkAPI.dispatch as AppDispatch;
+      const getState = ThunkAPI.getState as () => RootState;
+
+      const logInToken = selectLogInToken(getState());
+
+      const headers: Record<string, string> = {};
+      if (logInToken !== null) {
+        headers["Authorization"] = `Bearer ${logInToken}`;
+      }
+
+      const formData = new FormData();
+
+      if (avatarSource.from === "url") {
+        formData.append("url", avatarSource.url);
+      } else {
+        formData.append("imageFile", avatarSource.imageFile);
+      }
+
+      const { data }: { data: { url: string } } = await axios(
+        "/api/setUserAvatar",
+        {
+          method: "POST",
+          headers,
+          data: formData,
+        },
+      );
+
+      dispatch(appUser.actions.setAppUserAvatarURL(data.url));
+    },
+  ),
+};
