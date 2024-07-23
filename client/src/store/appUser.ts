@@ -48,7 +48,7 @@ const appUser = createSlice({
     setAppUser(state, { payload: user }: PayloadAction<User | null>) {
       state.appUser = user;
     },
-    setAppUserName(state, { payload: newName }: PayloadAction<string>) {
+    setAppUsername(state, { payload: newName }: PayloadAction<string>) {
       if (!state.appUser) return;
       state.appUser.name = newName;
     },
@@ -131,8 +131,8 @@ export const AppUserThunks = {
     dispatch(appUser.actions.setAppUser(null));
   }),
 
-  setUserName: createAsyncThunk(
-    "/appUser/setUserName",
+  setUsername: createAsyncThunk(
+    "/appUser/setUsername",
     async (name: string, ThunkAPI) => {
       const dispatch = ThunkAPI.dispatch as AppDispatch;
       const getState = ThunkAPI.getState as () => RootState;
@@ -144,13 +144,20 @@ export const AppUserThunks = {
         headers["Authorization"] = `Bearer ${logInToken}`;
       }
 
-      await axios("/api/setUserName", {
-        method: "POST",
-        headers,
-        data: { name },
-      });
+      try {
+        await axios("/api/setUsername", {
+          method: "POST",
+          headers,
+          data: { name },
+        });
+      } catch (e) {
+        const error = e as AxiosError;
+        throw error.response!.data;
+      }
 
-      dispatch(appUser.actions.setAppUserName(name));
+      console.log("set username")
+
+      dispatch(appUser.actions.setAppUsername(name));
     },
   ),
 
@@ -175,16 +182,22 @@ export const AppUserThunks = {
         formData.append("imageFile", avatarSource.imageFile);
       }
 
-      const { data }: { data: { url: string } } = await axios(
-        "/api/setUserAvatar",
-        {
-          method: "POST",
-          headers,
-          data: formData,
-        },
-      );
+      try {
+        const { data }: { data: { url: string } } = await axios(
+          "/api/setUserAvatar",
+          {
+            method: "POST",
+            headers,
+            data: formData,
+          },
+        );
 
-      dispatch(appUser.actions.setAppUserAvatarURL(data.url));
+        dispatch(appUser.actions.setAppUserAvatarURL(data.url));
+      } catch (e) {
+        console.log(e)
+        const error = e as AxiosError;
+        throw error.response!.data;
+      }
     },
   ),
 };

@@ -37,6 +37,12 @@ const store = createSlice({
       state.visible = false;
     },
   },
+
+  extraReducers(builder) {
+    builder.addCase("/appUser/logOut/fulfilled", (state) => {
+      store.caseReducers.hide(state);
+    })
+  }
 });
 
 export const AppAlertActions = store.actions;

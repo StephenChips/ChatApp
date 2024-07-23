@@ -20,22 +20,23 @@ import {
   DialogActions,
   styled,
 } from "@mui/material";
-import {
-  ArrowForward,
-  Close,
-  Delete,
-  Logout,
-} from "@mui/icons-material";
+import { ArrowForward, Close, Delete, Logout } from "@mui/icons-material";
 import { useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../../store";
-import { AppUserThunks, AvatarSource, selectAppUser } from "../../store/appUser";
+import {
+  AppUserThunks,
+  AvatarSource,
+  selectAppUser,
+  selectLogInToken,
+} from "../../store/appUser";
 import React, { useEffect, useState } from "react";
 import { PasswordField } from "../../components/PasswordField";
 import { AppAlertActions } from "../../store/appAlert";
 import axios from "axios";
 
 export function Account() {
-  const appUser = useAppSelector(selectAppUser)
+  const appUser = useAppSelector(selectAppUser);
+  const logInToken = useAppSelector(selectLogInToken);
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
@@ -93,7 +94,11 @@ export function Account() {
               <ListItemButton onClick={() => setIsChangingPassword(true)}>
                 <ListItemText primary="Change Password" />
               </ListItemButton>
-              <ListItemButton onClick={() => { dispatch(AppUserThunks.logOut()); }}>
+              <ListItemButton
+                onClick={() => {
+                  dispatch(AppUserThunks.logOut());
+                }}
+              >
                 <ListItemIcon>
                   <Logout />
                 </ListItemIcon>
@@ -131,18 +136,18 @@ export function Account() {
     setIsChangingUsername(false);
 
     try {
-      await dispatch(AppUserThunks.setUserName(newUsername));
-
+      await dispatch(AppUserThunks.setUsername(newUsername)).unwrap();
       dispatch(
         AppAlertActions.show({
           alertText: "You username has changed to " + newUsername,
           severity: "success",
         }),
       );
-    } catch {
+    } catch (e) {
+      const error = e as Error;
       dispatch(
         AppAlertActions.show({
-          alertText: "Failed to change the username.",
+          alertText: error.message,
           severity: "error",
         }),
       );
@@ -151,9 +156,15 @@ export function Account() {
 
   async function onSubmitPasswordChanged(newPassword: string) {
     setIsChangingPassword(false);
-
     try {
-      await updateUserPassword(newPassword);
+       await axios("/api/setUserPassword", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${logInToken}`
+        },
+        data: { password: newPassword }
+      });
+      console.log("hello")
       dispatch(AppUserThunks.logOut());
     } catch {
       dispatch(
@@ -166,32 +177,27 @@ export function Account() {
   }
 
   async function onSubmitAvatarChanged(newAvatarSource: AvatarSource) {
-    await dispatch(AppUserThunks.setUserAvatar(newAvatarSource));
-    dispatch(
-      AppAlertActions.show({
-        alertText: "Your avatar has been changed.",
-        severity: "success",
-      }),
-    );
-
-    setIsChangingAvatar(false);
+    try {
+      await dispatch(AppUserThunks.setUserAvatar(newAvatarSource)).unwrap();
+      dispatch(
+        AppAlertActions.show({
+          alertText: "Your avatar has been changed.",
+          severity: "success",
+        }),
+      );
+    } catch (e) {
+      const alertText = (e as Error).message;
+      dispatch(
+        AppAlertActions.show({
+          alertText,
+          severity: "error",
+        }),
+      );
+      return;
+    } finally {
+      setIsChangingAvatar(false);
+    }
   }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function updateUsername(_newUsername: string) {
-  // TODO to be implemented
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function updateUserPassword(_newPassword: string) {
-  // TODO to be implemented
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function updateUserAvatar(_avatarSource: AvatarSource) {
-  // TODO to be implemented
-  return { url: "" };
 }
 
 function ChangeUsernameDialog({
@@ -204,11 +210,11 @@ function ChangeUsernameDialog({
   onSubmit: (newUsername: string) => void;
 }) {
   const appUser = useAppSelector(selectAppUser)!;
-  const [userNameTextFieldValue, setUserNameTextFieldValue] = useState("");
+  const [userNameTextFieldValue, setUsernameTextFieldValue] = useState("");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
   useEffect(() => {
-    setUserNameTextFieldValue("");
+    setUsernameTextFieldValue("");
   }, [open]);
 
   return (
@@ -243,15 +249,14 @@ function ChangeUsernameDialog({
           variant="standard"
           value={userNameTextFieldValue}
           onChange={(event) => {
-            console.log(event.target.value);
             setErrorMessage("");
-            setUserNameTextFieldValue(event.target.value);
+            setUsernameTextFieldValue(event.target.value);
           }}
           helperText={errorMessage}
           margin="normal"
         ></TextField>
         <DialogContentText>
-          <Typography variant="body2">
+          <Typography variant="body2" component="span">
             Your current username is{" "}
             <span style={{ fontWeight: "bold" }}>{appUser.name}</span>
           </Typography>
@@ -277,7 +282,6 @@ function ChangePasswordDialog({
   onSubmit: (newPassword: string) => void;
 }) {
   const [showError, setShowError] = useState(false);
-
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
 
@@ -325,6 +329,7 @@ function ChangePasswordDialog({
           margin="normal"
         />
         <PasswordField
+          required
           error={showError && newPassword !== newPasswordConfirm}
           autoFocus
           id="newPasswordConfirm"
@@ -653,7 +658,7 @@ function AvatarButton({
 }
 
 async function fetchDefaultAvatars() {
-  type Response = { url: string }[]
+  type Response = { url: string }[];
   const response = await axios.post<Response>("/api/getDefaultAvatars");
   return response.data.map(({ url }) => url);
 }

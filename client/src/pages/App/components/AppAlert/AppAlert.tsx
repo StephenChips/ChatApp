@@ -11,8 +11,9 @@ export function AppAlert({ style = {} }: { style?: React.CSSProperties }) {
     <div style={style}>
       <div style={{ display: appAlert.visible ? "block" : "none" }}>
         <Alert
-          severity="success"
+          severity={appAlert.severity}
           onClose={() => dispatch(AppAlertActions.hide())}
+          sx={{ whiteSpace: "pre" }}
         >
           {appAlert.alertText}
         </Alert>

@@ -61,12 +61,18 @@ export function initUser(router: Router) {
     };
   });
 
-  router.post("/api/setUserName", httpAuth, requestBodyContentType("application/json"), async (ctx, next) => {
+  router.post("/api/setUsername", httpAuth, requestBodyContentType("application/json"), async (ctx) => {
     type RequestBody = { name: string };
     const id = ctx.request.jwt.payload.sub;
-    const { name } = ctx.request.body as RequestBody;
-    await pool.query("UPDATE chatapp.users SET name = $1 WHERE id = $2", [name, id]);
-    next();
+    const { name } = ctx.request.body as RequestBody
+    const trimmedName = name.trim();
+
+    if (trimmedName === "") {
+      ctx.throw(400, `"${name}" isn't a valid usename`);
+    }
+
+    await pool.query("UPDATE chatapp.users SET name = $1 WHERE id = $2", [trimmedName, id]);
+    ctx.body = null;
   })
 
   router.post("/api/setUserAvatar", httpAuth, requestBodyContentType("multipart/form-data"), async (ctx) => {
@@ -79,13 +85,13 @@ export function initUser(router: Router) {
     let imageFile: formidable.File = Array.isArray(multipart) ? multipart[0] : multipart;
 
     if (!url && !imageFile) {
-      ctx.throw(400, "You must send a URL or an image file to set your avatar.");
+      ctx.throw(400, new Error("You must send a URL or an image file to set your avatar."));
     }
     
     if (imageFile) {
       const MAX_FILESIZE_KB = 1000;
       if (imageFile.size > MAX_FILESIZE_KB * 1000) {
-        ctx.throw(400, "The image uploaded is too large, the maximum size is " + MAX_FILESIZE_KB + " KB.");
+        ctx.throw(400, new Error("The image uploaded is too large, the maximum size is " + MAX_FILESIZE_KB + " KB."));
       }
 
       const storePath = join(__dirname, `../public/user/${id}/user-avatar`);
@@ -102,7 +108,7 @@ export function initUser(router: Router) {
     ctx.body = { url };
   })
 
-  router.post("/api/setUserPassword", httpAuth, requestBodyContentType("application/json"), async (ctx, next) => {
+  router.post("/api/setUserPassword", httpAuth, requestBodyContentType("application/json"), async (ctx) => {
     type RequestBody = { password: string };
 
     const id = ctx.request.jwt.payload.sub;
@@ -113,8 +119,8 @@ export function initUser(router: Router) {
     const salt = result.rows[0].salt;
 
     const passwordHash = createPasswordHash(password, salt);
-    await pool.query("UPDATE chatapp.users SET name = $1 WHERE id = $2", [passwordHash, id]);
+    await pool.query("UPDATE chatapp.users SET password_hash = $1 WHERE id = $2", [passwordHash, id]);
 
-    next();
+    ctx.body = null;
   })
 }

@@ -2,7 +2,6 @@ import { createContext, useEffect, useRef, useState } from "react";
 import cls from "./App.module.css";
 import { ContactList } from "./components/ContactList/ContactList";
 import {
-  initializeStore,
   useAppDispatch,
   useAppSelector,
   useAppStore,
