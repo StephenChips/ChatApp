@@ -12,9 +12,9 @@ import { initDatabasePool, runSQLFile } from "./database";
 import { initIMSystem } from "./im-system"
 import { PoolConfig } from "pg";
 import { initAuthorization, socketIOAuth } from "./authorization";
-import { initNotification } from "./notification";
 import { initUser } from "./users";
 import initDefaultAvatars from "./default-avatars";
+import { initContact } from "./contact";
 
 export type AppEnv = {
   jwtSecret: string,
@@ -51,9 +51,9 @@ export async function startApp(env: AppEnv) {
 
   initIMSystem(io);
   initAuthorization(router);
-  initNotification(router);
   initUser(router);
   initDefaultAvatars(router);
+  initContact(router);
 
   app.use(mount("/public", serve(resolve(__dirname, "../public"))));
   app.use(router.routes());

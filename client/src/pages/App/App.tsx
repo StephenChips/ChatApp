@@ -90,7 +90,7 @@ export function App() {
   >(undefined);
   const [isAddContactDialogOpen, setIsAddContactDialogOpen] = useState(false);
 
-  const currentContactUserIDRef = useRef<number | undefined>();
+  const currentContactUserIDRef = useRef<User["id"] | undefined>();
   currentContactUserIDRef.current = currentContactUserID;
 
   const store = useAppStore();

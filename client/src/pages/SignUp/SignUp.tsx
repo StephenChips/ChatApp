@@ -207,7 +207,8 @@ export function SignUp() {
     setIsCreatingAccount(true);
 
     try {
-      const { id: userID } = await createAccount(username, password);
+      const response = await axios.post("/api/createUser", { name: username, password });
+      const userID = response.data.id;
       dispatch(AppUserThunks.logIn({ userID, password, rememberMe: false }));
       navigate("/welcome");
     } catch (e) {
@@ -228,16 +229,5 @@ export function SignUp() {
     } else {
       setSnackbarState("visible");
     }
-  }
-
-  async function createAccount(name: string, password: string) {
-    const response = await axios.post("/api/createUser", { name, password });
-
-    return await response.data as {
-      id: number;
-      name: string;
-      password: string;
-      avatarURL: string;
-    };
   }
 }

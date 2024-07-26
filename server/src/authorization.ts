@@ -1,6 +1,5 @@
 import Crypto = require("crypto");
 import { getPool } from "./database";
-import { createHash } from "node:crypto"
 import * as JWT from "jsonwebtoken"
 import * as Router from "koa-router";
 import { jwtSecret } from "../settings";
@@ -25,27 +24,6 @@ declare module "socket.io" {
   interface Socket {
     jwt?: { payload: JWTPayload }
   }
-}
-
-async function getJWTPayload(authHeader: string, jwtSecret: string) {
-  const headerPrefix = "bearer ";
-
-  if (!authHeader) {
-    throw new Error("Requires a JWT token");
-  }
-
-  if (!authHeader.toLowerCase().startsWith(headerPrefix)) {
-    throw new Error("Invalid authorization header");
-  }
-
-  const token = authHeader.slice(headerPrefix.length);
-
-  return new Promise<JWTPayload>((resolve, reject) => {
-    jwt.verify(token, jwtSecret, (error, jwtPayload) => {
-      if (error) reject(new Error("Invalid JWT token"));
-      else resolve((jwtPayload as unknown) as JWTPayload);
-    })
-  })
 }
 
 export function initAuthorization(router: Router) {
@@ -104,14 +82,36 @@ export function initAuthorization(router: Router) {
   })
 }
 
+async function verifyJWT(token: string, jwtSecret: string ) {
+  return new Promise<JWTPayload>((resolve, reject) => {
+    jwt.verify(token, jwtSecret, (error, jwtPayload) => {
+      console.log(error, jwtPayload)
+      if (error) reject(new Error("Invalid JWT token"));
+      else resolve((jwtPayload as unknown) as JWTPayload);
+    })
+  })
+}
+
 export async function httpAuth(ctx: Koa.Context, next: Koa.Next) {
+  const headerPrefix = "bearer ";
+  const authHeader = ctx.headers.authorization;
+
+  if (!authHeader) {
+    ctx.throw(400, "Requires a JWT token");
+  }
+
+  if (!authHeader.toLowerCase().startsWith(headerPrefix)) {
+    ctx.throw(400, "Invalid authorization header");
+  }
+
   try {
-    const payload = await getJWTPayload(ctx.header.authorization, jwtSecret);
+    const token = authHeader.slice(headerPrefix.length);
+    const payload = await verifyJWT(token, jwtSecret);
     ctx.request.jwt = { payload };
     return next();
   } catch (e) {
     const error = e as Error;
-    ctx.throw(400, error.message);
+    ctx.throw(400, { message: error.message });
   }
 }
 
@@ -122,12 +122,13 @@ export async function socketIOAuth(socket: SocketIO.Socket, next: (err?: Error) 
   let userID: number;
 
   try {
-    const authHeader = socket.request.headers["authorization"];
-    const jwtPayload = await getJWTPayload(authHeader, jwtSecret)
-    userID = jwtPayload.sub;
-    socket.jwt.payload = jwtPayload;
+    console.log(socket.handshake.auth, socket.jwt)
+    socket.jwt = {
+      payload: await verifyJWT(socket.handshake.auth.jwt, jwtSecret)
+    }
+    userID = socket.jwt.payload.sub;
   } catch (e) {
-    next(e as Error)
+    next(e as Error);
     return;
   }
 

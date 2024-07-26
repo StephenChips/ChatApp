@@ -97,7 +97,7 @@ function Row({ message, className }: RowProps) {
 
 export function MessageWindow() {
   const appUser = useAppSelector(selectAppUser);
-  const currentContactID = Number(useParams().userID!);
+  const currentContactID = useParams().userID!;
   const currentContact = useAppSelector((state) =>
     selectContactByUserID(state, currentContactID),
   );
@@ -196,8 +196,7 @@ export function MessageWindow() {
 
   async function sendMessageToServer(message: Message) {
     return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        console.log(message);
+      setTimeout(()=> {
         resolve();
       }, 1000);
     });

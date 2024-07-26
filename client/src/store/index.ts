@@ -1,11 +1,12 @@
-import { configureStore, ThunkAction, UnknownAction } from "@reduxjs/toolkit";
-import contactsReducer, { setAllContacts } from "./contacts";
-import appUsersReducer, { AppUserThunks } from "./appUser";
-import notificationsReducer, { NotificationActions } from "./notifications";
+import { configureStore } from "@reduxjs/toolkit";
+import contactsReducer from "./contacts";
+import appUsersReducer, { AppUserThunks, selectLogInToken } from "./appUser";
+import notificationsReducer, { NotificationThunks } from "./notifications";
 import deleteUserDialogReducer from "./deleteUserDialog";
 import appAlertReducer from "./appAlert";
 import { useDispatch, useSelector, useStore } from "react-redux";
-import { Contact, Notification } from "./modeltypes";
+import { Contact } from "./modeltypes";
+import { initSocket } from "../socket";
 
 export const store = configureStore({
   reducer: {
@@ -31,7 +32,7 @@ export function fetchContactsWithMessages(): Contact[] {
   return [
     {
       user: {
-        id: 1,
+        id: "1",
         name: "John",
         avatarURL:
           "https://fastly.picsum.photos/id/903/50/50.jpg?hmac=KOpCpZY7_zRGpVsF5FCfJnWk_f24Cy-5ROIOIDDYN0E",
@@ -40,7 +41,7 @@ export function fetchContactsWithMessages(): Contact[] {
     },
     {
       user: {
-        id: 2,
+        id: "2",
         name: "Jack",
         avatarURL:
           "https://fastly.picsum.photos/id/174/50/50.jpg?hmac=mW6r1Zub6FvIFJsQBfPRVHD6r1n980M8y7kpNQ3scFI",
@@ -49,7 +50,7 @@ export function fetchContactsWithMessages(): Contact[] {
     },
     {
       user: {
-        id: 3,
+        id: "3",
         name: "Paul",
         avatarURL:
           "https://fastly.picsum.photos/id/649/50/50.jpg?hmac=1DvRtR-LwNXehtjiit4CTZU6D6nXcN_aI6TqMwkw8PU",
@@ -59,80 +60,18 @@ export function fetchContactsWithMessages(): Contact[] {
   ];
 }
 
-async function fetchNotifications(): Promise<Notification[]> {
-  return [
-    {
-      id: 0,
-      type: "add contact request",
-      creationTime: "2020/3/3 11:33:10",
-      request: {
-        id: 0,
-        fromUser: {
-          id: 0,
-          name: "Jack",
-          avatarURL:
-            "https://fastly.picsum.photos/id/903/50/50.jpg?hmac=KOpCpZY7_zRGpVsF5FCfJnWk_f24Cy-5ROIOIDDYN0E",
-        },
-        toUser: {
-          id: 1,
-          name: "John",
-          avatarURL:
-            "https://fastly.picsum.photos/id/903/50/50.jpg?hmac=KOpCpZY7_zRGpVsF5FCfJnWk_f24Cy-5ROIOIDDYN0E",
-        },
-        requestStatus: "expired",
-      },
-    },
-    {
-      id: 1,
-      type: "add contact request",
-      creationTime: "2020/3/4 13:10:42",
-      request: {
-        id: 0,
-        fromUser: {
-          id: 1,
-          name: "John",
-          avatarURL:
-            "https://fastly.picsum.photos/id/903/50/50.jpg?hmac=KOpCpZY7_zRGpVsF5FCfJnWk_f24Cy-5ROIOIDDYN0E",
-        },
-        toUser: {
-          id: 0,
-          name: "Jack",
-          avatarURL:
-            "https://fastly.picsum.photos/id/903/50/50.jpg?hmac=KOpCpZY7_zRGpVsF5FCfJnWk_f24Cy-5ROIOIDDYN0E",
-        },
-        requestStatus: "pending",
-      },
-    },
-  ];
-}
+export async function initStore(store: AppStore) {
+  if (storeHasInitialized) return;
 
-export function initializeStore(): ThunkAction<
-  Promise<void>,
-  RootState,
-  unknown,
-  UnknownAction
-> {
-  return async function (dispatch) {
-    if (storeHasInitialized) return;
+  // Set the login token from the local/sessionStorage (if exists).
+  await store.dispatch(AppUserThunks.initStore());
 
-    const contacts = await fetchContactsWithMessages();
-    const notifications = await fetchNotifications();
+  // If we find a login token, we should load data that need login.
+  const logInToken = selectLogInToken(store.getState());
+  if (logInToken !== null) {
+    await store.dispatch(NotificationThunks.initStore());
+    initSocket({ logInToken, store });
+  }
 
-    dispatch(setAllContacts(contacts));
-    dispatch(
-      NotificationActions.initialze({
-        notifications,
-        unreadNotificationIDs: notifications.map(
-          (notifications) => notifications.id,
-        ),
-        newNotificationIDs: notifications.map(
-          (notifications) => notifications.id,
-        ),
-      }),
-    );
-
-    await dispatch(AppUserThunks.initStore());
-
-    storeHasInitialized = true;
-  };
+  storeHasInitialized = true;
 }

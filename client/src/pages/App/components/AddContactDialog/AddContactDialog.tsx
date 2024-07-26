@@ -15,6 +15,9 @@ import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { useContext, useState, useEffect } from "react";
 import { MainPageContext } from "../../App";
 import { User } from "../../../../store/modeltypes";
+import axios, { AxiosError } from "axios";
+import { useAppSelector } from "../../../../store";
+import { selectLogInToken } from "../../../../store/appUser";
 
 type SearchResult =
   | { status: "searching" }
@@ -56,8 +59,10 @@ export function AddContactDialog() {
     closeAddContactDialog: closeThisDialog,
   } = useContext(MainPageContext);
 
+  const logInToken = useAppSelector(selectLogInToken);
+
   const tooltip = useTooltip();
-  const [textFieldValue, setTextFieldValue] = useState("");
+  const [searchedUserID, setSearchedUserID] = useState("");
   const [isSearchResultVisible, setIsSearchResultVisible] = useState(false);
   const [searchResult, setSearchResult] = useState<SearchResult>({
     status: "searching",
@@ -103,7 +108,7 @@ export function AddContactDialog() {
                 fullWidth
                 inputProps={{ inputMode: "numeric" }}
                 onChange={onChangeTextField}
-                value={textFieldValue}
+                value={searchedUserID}
               />
             </Tooltip>
           </Box>
@@ -167,7 +172,7 @@ export function AddContactDialog() {
                   return (
                     <>
                       The user you searched doesn't exist. (ChatApp ID:{" "}
-                      {textFieldValue}){" "}
+                      {searchedUserID}){" "}
                     </>
                   );
                 }
@@ -191,15 +196,12 @@ export function AddContactDialog() {
   function onChangeTextField(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) {
-    if (Array.prototype.every.call(e.target.value, isDigit)) {
-      setTextFieldValue(e.target.value);
-    } else {
-      tooltip.prompt("Please enter digits");
-    }
+    setIsSearchResultVisible(false);
+    setSearchedUserID(e.target.value);
   }
 
   async function onClickSearchUserButton() {
-    if (textFieldValue === "") {
+    if (searchedUserID === "") {
       tooltip.prompt("Please enter a ChatApp ID for searching.");
       return;
     }
@@ -208,37 +210,43 @@ export function AddContactDialog() {
     setSearchResult({ status: "searching" });
 
     try {
-      const user = await searchUser();
+      const response = await axios.post("/api/getUserPublicInfo", {
+        id: searchedUserID,
+      });
+      const user = response.data;
       setSearchResult({ status: "search completed", user });
     } catch (e) {
-      console.error(e);
-      setSearchResult({ status: "search failed", error: e as Error });
+      const errorText = (e as AxiosError).response!.data;
+
+      if (errorText === "No such user") {
+        setSearchResult({ status: "search completed" });
+        return;
+      }
+
+      setSearchResult({
+        status: "search failed",
+        error: new Error((e as AxiosError).response!.data as string),
+      });
     }
   }
 
-  function onClickAddToContactButton() {
+  async function onClickAddToContactButton() {
+     await axios("/api/createAddContactRequest", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${logInToken}`
+      },
+      data: {
+        recipientID: searchedUserID
+      }
+    });
+
     closeThisDialog();
   }
 
   function resetState() {
-    setTextFieldValue("");
+    setSearchedUserID("");
     setIsSearchResultVisible(false);
     tooltip.close();
   }
-
-  async function searchUser() {
-    return {
-      id: 1,
-      name: "John",
-      avatarURL:
-        "https://fastly.picsum.photos/id/903/50/50.jpg?hmac=KOpCpZY7_zRGpVsF5FCfJnWk_f24Cy-5ROIOIDDYN0E",
-    };
-  }
-}
-
-function isDigit(ch: string) {
-  return (
-    ch.charCodeAt(0) >= "0".charCodeAt(0) &&
-    ch.charCodeAt(0) <= "9".charCodeAt(0)
-  );
 }

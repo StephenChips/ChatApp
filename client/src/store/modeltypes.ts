@@ -1,5 +1,5 @@
 export type User = {
-  id: number;
+  id: string;
   name: string;
   avatarURL: string;
 };
@@ -33,13 +33,12 @@ export type Contact = {
 
 type CommonNotificationProps = {
   id: number;
-  creationTime: string; // UTC time in ISO format
+  createdAt: string; // UTC time in ISO format
 };
 
 export type RequestStatus = "agreed" | "rejected" | "pending" | "expired";
 
 export type AddContactRequest = {
-  id: number;
   fromUser: User;
   toUser: User;
   requestStatus: RequestStatus;

@@ -28,6 +28,7 @@ function NotificationItem({ notification }: { notification: Notification }) {
   let statusElement: JSX.Element | null = null;
 
   const request = notification.request;
+  console.log(request)
 
   if (request.toUser.id === appUser.id) {
     notificationMessage = (
@@ -107,7 +108,7 @@ function NotificationItem({ notification }: { notification: Notification }) {
     } else {
       notificationMessage = (
         <div>
-          Your have send request for adding contact to{" "}
+          Your have sent request for adding contact to{" "}
           <span style={{ fontWeight: "bold" }}>{request.toUser.name}</span>
           &nbsp; (ChatApp ID: {request.toUser.id}).
         </div>
@@ -137,7 +138,7 @@ function NotificationItem({ notification }: { notification: Notification }) {
         ) : null}
         <Typography display="inline" variant="body2" color="grey">
           {" "}
-          {format(notification.creationTime, "Pp")}
+          {format(notification.createdAt, "Pp")}
         </Typography>
       </div>
       <Box

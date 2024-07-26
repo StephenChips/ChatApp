@@ -6,7 +6,7 @@ import { httpAuth } from "./authorization";
 import { requestBodyContentType } from "./utils";
 import formidable = require("formidable");
 import { basename, dirname, extname, join } from "node:path";
-import { copyFile, mkdir, rename, unlink } from "node:fs/promises";
+import { copyFile, mkdir, unlink } from "node:fs/promises";
 
 const randomBytes = promisify(Crypto.randomBytes);
 
@@ -43,17 +43,19 @@ export function initUser(router: Router) {
       [requestBody.name, avatarURL, passwordHash, salt]
     );
 
-    ctx.body = { id: result.rows[0].id };
+    ctx.body = { id: result.rows[0].id.toString() };
   });
 
   router.post("/api/getUserPublicInfo", requestBodyContentType("application/json"), async (ctx) => {
-    type RequestBody = { id: number };
+    type RequestBody = { id: string };
     const requerstBody = ctx.request.body as RequestBody;
 
     const result = await pool.query("SELECT id, name, avatar_url FROM chatapp.users WHERE id = $1;", [requerstBody.id]);
-    if (result.rows.length === 0) ctx.throw(400, "No such user");
-    const { id, name, avatar_url } = result.rows[0];
+    if (result.rows.length === 0) {
+      ctx.throw(400, new Error("No such user"));
+    }
 
+    const { id, name, avatar_url } = result.rows[0];
     ctx.body = {
       id,
       name,
@@ -68,7 +70,7 @@ export function initUser(router: Router) {
     const trimmedName = name.trim();
 
     if (trimmedName === "") {
-      ctx.throw(400, `"${name}" isn't a valid usename`);
+      ctx.throw(400, new Error(`"${name}" isn't a valid usename`));
     }
 
     await pool.query("UPDATE chatapp.users SET name = $1 WHERE id = $2", [trimmedName, id]);
@@ -115,7 +117,7 @@ export function initUser(router: Router) {
     const { password } = ctx.request.body as RequestBody;
 
     const result = await pool.query("SELECT salt FROM chatapp.users WHERE id = $1", [id]);
-    if (result.rows.length === 0) ctx.throw(400, "No such user");
+    if (result.rows.length === 0) ctx.throw(400, new Error("No such user"));
     const salt = result.rows[0].salt;
 
     const passwordHash = createPasswordHash(password, salt);

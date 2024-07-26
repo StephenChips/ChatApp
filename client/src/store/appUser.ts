@@ -1,7 +1,9 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { AppDispatch, RootState } from ".";
+import { AppDispatch, AppStore, RootState } from ".";
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { User } from "./modeltypes";
+import { NotificationThunks } from "./notifications";
+import { closeSocket, initSocket } from "../socket";
 
 const LOGIN_TOKEN_KEY = "login-token";
 
@@ -64,7 +66,7 @@ export default appUser.reducer;
 export const selectLogInToken = (state: RootState) => state.appUser.logInToken;
 export const selectAppUser = (state: RootState) => state.appUser.appUser;
 export const selectHasLoggedIn = (state: RootState) =>
-  !!selectLogInToken(state);
+  selectLogInToken(state) !== null;
 
 export const AppUserThunks = {
   initStore: createAsyncThunk("/appUser/initStore", async (_, { dispatch }) => {
@@ -90,8 +92,9 @@ export const AppUserThunks = {
         password,
         rememberMe,
       }: { userID: string; password: string; rememberMe?: boolean },
-      { dispatch },
+      ThunkAPI,
     ) => {
+      const dispatch = ThunkAPI.dispatch as AppDispatch;
       let response: AxiosResponse;
 
       try {
@@ -103,7 +106,6 @@ export const AppUserThunks = {
         throw new Error(data.message);
       }
 
-      console.log(response);
       const { jwt: logInToken } = response.data as { jwt: string };
 
       localStorage.removeItem(LOGIN_TOKEN_KEY);
@@ -117,10 +119,10 @@ export const AppUserThunks = {
 
       dispatch(appUser.actions.setLogInToken(logInToken));
 
-      const { data: user } = await axios.post("/api/getUserPublicInfo", {
-        id: userID,
-      });
-      dispatch(appUser.actions.setAppUser(user));
+      await dispatch(AppUserThunks.fetchAppUser());
+      await dispatch(NotificationThunks.initStore());
+
+      initSocket({ logInToken, store: ThunkAPI.getState() as AppStore });
     },
   ),
 
@@ -129,7 +131,24 @@ export const AppUserThunks = {
     sessionStorage.removeItem(LOGIN_TOKEN_KEY);
     dispatch(appUser.actions.setLogInToken(null));
     dispatch(appUser.actions.setAppUser(null));
+    closeSocket();
   }),
+
+  fetchAppUser: createAsyncThunk(
+    "/appUser/fetchAppUser",
+    async (_, ThunkAPI) => {
+      const dispatch = ThunkAPI.dispatch as AppDispatch;
+      const rootState = ThunkAPI.getState() as RootState;
+
+      const jwt = selectLogInToken(rootState);
+      const { sub: userID } = decodeJWT(jwt!);
+
+      const { data: user } = await axios.post("/api/getUserPublicInfo", {
+        id: userID,
+      });
+      dispatch(appUser.actions.setAppUser(user));
+    },
+  ),
 
   setUsername: createAsyncThunk(
     "/appUser/setUsername",
@@ -154,8 +173,6 @@ export const AppUserThunks = {
         const error = e as AxiosError;
         throw error.response!.data;
       }
-
-      console.log("set username")
 
       dispatch(appUser.actions.setAppUsername(name));
     },
@@ -194,7 +211,7 @@ export const AppUserThunks = {
 
         dispatch(appUser.actions.setAppUserAvatarURL(data.url));
       } catch (e) {
-        console.log(e)
+        console.error(e);
         const error = e as AxiosError;
         throw error.response!.data;
       }

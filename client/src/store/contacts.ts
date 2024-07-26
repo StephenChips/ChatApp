@@ -6,9 +6,16 @@ import {
 import { RootState } from ".";
 import { Contact, Message, User } from "./modeltypes";
 
-const contactsAdapter = createEntityAdapter<Contact, number>({
+function stringCompare(a: string, b: string) {
+  if (a < b) return -1;
+  else if (a === b) return 0;
+  else return 1;
+}
+
+const contactsAdapter = createEntityAdapter<Contact, User["id"]>({
   selectId: (contact) => contact.user.id,
-  sortComparer: (contact1, contact2) => contact1.user.id - contact2.user.id,
+  sortComparer: (contact1, contact2) =>
+    stringCompare(contact1.user.id, contact2.user.id),
 });
 
 const initialState = contactsAdapter.getInitialState();

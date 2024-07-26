@@ -10,13 +10,16 @@ CREATE TABLE IF NOT EXISTS chatapp.users (
 
 CREATE TABLE IF NOT EXISTS chatapp.default_avatars (url TEXT PRIMARY KEY);
 
-CREATE TABLE IF NOT EXISTS chatapp.notifications (
+CREATE TABLE IF NOT EXISTS chatapp.add_contact_requests (
     id SERIAL PRIMARY KEY,
-    created_time TIMESTAMP,
-    content TEXT,
-    user_id INT,
-    CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES chatapp.users(id)
+    created_at TIMESTAMP,
+    requester_id INT,
+    recipient_id INT,
+    status TEXT,
+    CONSTRAINT fk_requester_id FOREIGN KEY (requester_id) REFERENCES chatapp.users(id),
+    CONSTRAINT fk_recipient_id FOREIGN KEY (recipient_id) REFERENCES chatapp.users(id)
 );
+
 
 CREATE TABLE IF NOT EXISTS chatapp.contacts (
     user_id INT,
