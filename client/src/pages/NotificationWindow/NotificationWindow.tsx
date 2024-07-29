@@ -6,29 +6,27 @@ import { useAppDispatch, useAppSelector } from "../../store";
 import {
   selectAllNotifications,
   NotificationActions,
-  isNotificationNew,
 } from "../../store/notifications";
 import {
   AddContactRequestNotification,
   Notification,
   RequestStatus,
 } from "../../store/modeltypes";
-import { selectAppUser } from "../../store/appUser";
+import { selectAppUser, selectLogInToken } from "../../store/appUser";
+import axios from "axios";
 
 function NotificationItem({ notification }: { notification: Notification }) {
   const dispatch = useAppDispatch();
   const appUser = useAppSelector(selectAppUser);
-  const isNew = useAppSelector((state) =>
-    isNotificationNew(state, notification),
-  );
-
-  if (!appUser) return <></>
+  const logInToken = useAppSelector(selectLogInToken);
+  const isNew = !notification.hasRead
+  
+  if (!appUser) return <></>;
 
   let notificationMessage: JSX.Element;
   let statusElement: JSX.Element | null = null;
 
   const request = notification.request;
-  console.log(request)
 
   if (request.toUser.id === appUser.id) {
     notificationMessage = (
@@ -61,16 +59,12 @@ function NotificationItem({ notification }: { notification: Notification }) {
       statusElement = (
         <Box display="flex" flexWrap="nowrap">
           <Button
-            onClick={() =>
-              setAddContactRequestNotificationStatus(notification, "agreed")
-            }
+            onClick={() => setAddContactRequestStatus(notification, "agreed")}
           >
             Agree
           </Button>
           <Button
-            onClick={() =>
-              setAddContactRequestNotificationStatus(notification, "rejected")
-            }
+            onClick={() => setAddContactRequestStatus(notification, "rejected")}
           >
             Reject
           </Button>
@@ -153,10 +147,21 @@ function NotificationItem({ notification }: { notification: Notification }) {
     </Box>
   );
 
-  function setAddContactRequestNotificationStatus(
+  async function setAddContactRequestStatus(
     notification: AddContactRequestNotification,
     newStatus: RequestStatus,
   ) {
+    await axios("/api/setAddContactRequestStatus", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${logInToken}`,
+      },
+      data: {
+        requestID: notification.request.id,
+        status: newStatus
+      }
+    });
+
     const newNotification: AddContactRequestNotification = {
       ...notification,
       request: {

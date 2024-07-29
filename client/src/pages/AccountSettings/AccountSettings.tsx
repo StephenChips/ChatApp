@@ -164,7 +164,6 @@ export function Account() {
         },
         data: { password: newPassword }
       });
-      console.log("hello")
       dispatch(AppUserThunks.logOut());
     } catch {
       dispatch(

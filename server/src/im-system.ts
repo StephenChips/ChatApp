@@ -2,7 +2,7 @@
 import * as SocketIO from "socket.io";
 import { onlineUserSockets } from "./authorization";
 
-type UserID = number;
+type UserID = string;
 
 type Message = {
   senderID: UserID;

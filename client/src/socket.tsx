@@ -1,11 +1,7 @@
 import { io, Socket } from "socket.io-client";
-import { AppStore } from "./store";
-import { idGenerator, NotificationActions } from "./store/notifications";
-import axios from "axios";
-
+import { AppDispatch } from "./store";
+import { NotificationActions } from "./store/notifications";
 let socket: Socket | undefined;
-
-window.io = io;
 
 export function getSocket() {
   return socket;
@@ -13,10 +9,10 @@ export function getSocket() {
 
 export function initSocket({
   logInToken,
-  store,
+  dispatch,
 }: {
   logInToken: string;
-  store: AppStore;
+  dispatch: AppDispatch;
 }) {
   socket = io({ auth: { jwt: logInToken } });
 
@@ -30,31 +26,9 @@ export function initSocket({
     console.log(error);
   });
 
-  socket.on("add-contact-request", async (addContactRequest) => {
-    const { createdAt, status, recipientID, requesterID } = addContactRequest;
-    const getUserPublicInfo = (id: unknown) =>
-      axios.post("/api/getUserPublicInfo", { id });
-
-    const [{ data: fromUser }, { data: toUser }] = await Promise.all([
-      getUserPublicInfo(requesterID),
-      getUserPublicInfo(recipientID),
-    ]);
-
-    store.dispatch(
-      NotificationActions.upsertOne({
-        id: idGenerator.next(),
-        type: "add contact request",
-        createdAt,
-        request: {
-          fromUser,
-          toUser,
-          requestStatus: status,
-        },
-      }),
-    );
+  socket.on("notification/new", (notification) => {
+    dispatch(NotificationActions.addOne(notification));
   });
-
-  console.log(socket)
 
   return socket;
 }

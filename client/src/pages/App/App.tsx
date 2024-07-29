@@ -32,7 +32,7 @@ import {
   Check,
 } from "@mui/icons-material";
 import { Outlet, useLocation, useNavigate, type Location } from "react-router";
-import { NotificationActions } from "../../store/notifications";
+import { NotificationActions, NotificationThunks, selectBadgeNumber } from "../../store/notifications";
 import { DeleteUserDialogActions } from "../../store/deleteUserDialog";
 import { AppAlert } from "./components/AppAlert/AppAlert";
 import { NavigateEffect } from "../../components/NavigateEffect";
@@ -74,14 +74,14 @@ export function App() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  useLocationChange((previousLocation, currentLocation) => {
+  useLocationChange(async (previousLocation, currentLocation) => {
     if (previousLocation?.pathname === currentLocation?.pathname) return;
     if (previousLocation?.pathname === "/notifications") {
       // When we've left the notification
-      dispatch(NotificationActions.clearNew());
+      dispatch(NotificationThunks.readAll());
     } else if (currentLocation.pathname === "/notifications") {
       // When we've entered the notification page
-      dispatch(NotificationActions.readAll());
+      dispatch(NotificationActions.setBadgeNumber(0));
     }
   });
 
@@ -102,9 +102,7 @@ export function App() {
     else return selectContactByUserID(state, currentContactUserID);
   });
 
-  const numberOfUnreadNotifications = useAppSelector((state) => {
-    return state.notifications.unreadNotificationIDs.length;
-  });
+  const badgeNumber = useAppSelector(selectBadgeNumber);
 
   const context: MainPageContext = {
     currentContact,
@@ -155,7 +153,7 @@ export function App() {
               title="System Notifications"
               onClick={() => navigate("/notifications")}
             >
-              <Badge badgeContent={numberOfUnreadNotifications} color="primary">
+              <Badge badgeContent={badgeNumber} color="primary">
                 <Notifications fontSize="small" />
               </Badge>
             </IconButton>

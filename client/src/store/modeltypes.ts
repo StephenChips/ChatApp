@@ -34,11 +34,13 @@ export type Contact = {
 type CommonNotificationProps = {
   id: number;
   createdAt: string; // UTC time in ISO format
+  hasRead: boolean,
 };
 
 export type RequestStatus = "agreed" | "rejected" | "pending" | "expired";
 
 export type AddContactRequest = {
+  id: number,
   fromUser: User;
   toUser: User;
   requestStatus: RequestStatus;

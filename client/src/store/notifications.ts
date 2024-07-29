@@ -2,23 +2,14 @@ import { differenceInMilliseconds } from "date-fns";
 import {
   createEntityAdapter,
   createSlice,
+  PayloadAction,
   ThunkAction,
   UnknownAction,
 } from "@reduxjs/toolkit";
-import { Notification, User } from "./modeltypes";
+import { Notification } from "./modeltypes";
 import { RootState } from ".";
 import axios, { AxiosError } from "axios";
 import { selectLogInToken } from "./appUser";
-
-class IntegerGenerator {
-  private _val = 0;
-
-  public next(): number {
-    return this._val++;
-  }
-}
-
-export const idGenerator = new IntegerGenerator();
 
 const notificationAdapter = createEntityAdapter<Notification>({
   sortComparer: (n1, n2) =>
@@ -26,8 +17,7 @@ const notificationAdapter = createEntityAdapter<Notification>({
 });
 
 const initialState = notificationAdapter.getInitialState({
-  unreadNotificationIDs: [] as number[],
-  newNotificationIDs: [] as number[],
+  badgeNumber: 0 as number,
 });
 
 const notificationSlice = createSlice({
@@ -38,10 +28,26 @@ const notificationSlice = createSlice({
     setOne: notificationAdapter.setOne,
     upsertMany: notificationAdapter.upsertMany,
     readAll(state) {
-      state.unreadNotificationIDs = [];
+      for (const id of state.ids) {
+        state.entities[id].hasRead = true;
+      }
     },
-    clearNew(state) {
-      state.newNotificationIDs = [];
+    setBadgeNumber(state, { payload }: PayloadAction<number>) {
+      state.badgeNumber = payload;
+    },
+    addOne(state, { payload: notification }: PayloadAction<Notification>) {
+      notificationAdapter.addOne(state, notification);
+      if (!notification.hasRead) {
+        state.badgeNumber++;
+      }
+    },
+    addMany(state, { payload: notifications }: PayloadAction<Notification[]>) {
+      notificationAdapter.addMany(state, notifications);
+      for (const notification of notifications) {
+        if (!notification.hasRead) {
+          state.badgeNumber++;
+        }
+      }
     },
   },
 });
@@ -56,27 +62,50 @@ export const {
   selectTotal: selectTotalOfNotifications,
 } = notificationAdapter.getSelectors<RootState>((state) => state.notifications);
 
-export function isNotificationNew(
-  state: RootState,
-  notification: Notification,
-) {
-  return state.notifications.newNotificationIDs.includes(notification.id);
+export function selectBadgeNumber(state: RootState) {
+  return state.notifications.badgeNumber;
 }
 
 export default notificationSlice.reducer;
 
 export const NotificationThunks = {
-  initStore(): ThunkAction<
-    Promise<void>,
-    RootState,
-    unknown,
-    UnknownAction
-  > {
+  readAll(): ThunkAction<Promise<void>, RootState, unknown, UnknownAction> {
+    return async function (dispatch, getState) {
+      const numbersOfNotifications = selectTotalOfNotifications(getState());
+      if (numbersOfNotifications === 0) return;
+
+      const logInToken = selectLogInToken(getState());
+      const data = selectAllNotifications(getState())
+        .filter((notification) => !notification.hasRead)
+        .map((notification) => ({
+          id: notification.id,
+          hasRead: true,
+        }));
+
+      try {
+        await axios("/api/setNotificationHasRead", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${logInToken}`,
+          },
+          data,
+        });
+      } catch (e) {
+        const error = e as AxiosError;
+        throw error.response?.data;
+      }
+
+      dispatch(notificationSlice.actions.readAll());
+      dispatch(notificationSlice.actions.setBadgeNumber(0));
+    };
+  },
+
+  initStore(): ThunkAction<Promise<void>, RootState, unknown, UnknownAction> {
     return async function (dispatch, getState) {
       const logInToken = selectLogInToken(getState());
 
       try {
-        const response = await axios("/api/getAddContactRequests", {
+        const { data: notifications } = await axios("/api/getNotifications", {
           method: "POST",
           headers: {
             Authorization:
@@ -84,13 +113,7 @@ export const NotificationThunks = {
           },
         });
 
-        const addContactRequests = response.data as unknown[];
-        const usersMap = await fetchUsers(addContactRequests);
-        const notifications = addContactRequests.map((request) =>
-          toNotification(request, usersMap),
-        );
-
-        dispatch(NotificationActions.upsertMany(notifications));
+        dispatch(NotificationActions.addMany(notifications));
       } catch (e) {
         const error = e as AxiosError;
         throw error.response?.data;
@@ -98,47 +121,3 @@ export const NotificationThunks = {
     };
   },
 };
-
-async function fetchUsers(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  addContactRequests: any[],
-): Promise<Map<string, User>> {
-  const usersMap = new Map<User["id"], User>();
-  const userIDSet = new Set<User["id"]>();
-  const promises: Promise<void>[] = [];
-
-  for (const acr of addContactRequests) {
-    for (const idKey of ["requesterID", "recipientID"]) {
-      const id = acr[idKey];
-      if (userIDSet.has(id)) continue;
-      userIDSet.add(id);
-      const promise = axios
-        .post("/api/getUserPublicInfo", { id })
-        .then((response) => {
-          usersMap.set(id, response.data);
-        });
-      promises.push(promise);
-    }
-  }
-
-  await Promise.all(promises);
-
-  return usersMap;
-}
-
-function toNotification(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  addContactRequest: any,
-  usersMap: Map<User["id"], User>,
-): Notification {
-  return {
-    id: idGenerator.next(),
-    type: "add contact request",
-    createdAt: addContactRequest.createdAt,
-    request: {
-      fromUser: usersMap.get(addContactRequest.requesterID)!,
-      toUser: usersMap.get(addContactRequest.recipientID)!,
-      requestStatus: addContactRequest.status,
-    },
-  };
-}

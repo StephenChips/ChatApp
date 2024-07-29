@@ -2,9 +2,13 @@ import {
   createEntityAdapter,
   createSlice,
   PayloadAction,
+  ThunkAction,
+  UnknownAction,
 } from "@reduxjs/toolkit";
 import { RootState } from ".";
 import { Contact, Message, User } from "./modeltypes";
+import axios from "axios";
+import { selectLogInToken } from "./appUser";
 
 function stringCompare(a: string, b: string) {
   if (a < b) return -1;
@@ -27,7 +31,7 @@ const contactsSlice = createSlice({
     addContact: contactsAdapter.addOne,
     deleteContact: contactsAdapter.removeOne,
 
-    setAllContacts: contactsAdapter.setAll,
+    addManyContacts: contactsAdapter.addMany,
 
     sendMessage(
       state,
@@ -62,7 +66,7 @@ const contactsSlice = createSlice({
 export const {
   deleteContact,
   addContact,
-  setAllContacts,
+  addManyContacts,
   sendMessage,
   setMessageStatus,
 } = contactsSlice.actions;
@@ -90,3 +94,23 @@ export function hasContact(state: RootState, userID: User["id"]) {
 }
 
 export default contactsSlice.reducer;
+
+export function initContactsStore() : ThunkAction<Promise<void>, RootState, unknown, UnknownAction> {
+  return async function (dispatch, getState) {
+    const logInToken = selectLogInToken(getState())!;
+    if (logInToken === null) return;
+    const { data: contactUsers } = await axios("/api/getContacts", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${logInToken}`
+      }
+    });
+
+    const contact = contactUsers.map((user: unknown) => ({
+      user: user,
+      messages: [],
+    } as Contact))
+
+    dispatch(addManyContacts(contact));
+  }
+}

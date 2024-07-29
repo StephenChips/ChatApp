@@ -1,7 +1,5 @@
 import style from "./AccountInfo.module.css";
 
-console.log(style);
-
 export function AccountInfo() {
   return (
     <div className={style.container}>

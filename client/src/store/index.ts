@@ -1,5 +1,5 @@
-import { configureStore } from "@reduxjs/toolkit";
-import contactsReducer from "./contacts";
+import { configureStore, ThunkAction, UnknownAction } from "@reduxjs/toolkit";
+import contactsReducer, { initContactsStore } from "./contacts";
 import appUsersReducer, { AppUserThunks, selectLogInToken } from "./appUser";
 import notificationsReducer, { NotificationThunks } from "./notifications";
 import deleteUserDialogReducer from "./deleteUserDialog";
@@ -25,8 +25,6 @@ export type AppDispatch = AppStore["dispatch"];
 export const useAppDispatch = useDispatch.withTypes<AppDispatch>();
 export const useAppSelector = useSelector.withTypes<RootState>();
 export const useAppStore = useStore.withTypes<AppStore>();
-
-let storeHasInitialized = false;
 
 export function fetchContactsWithMessages(): Contact[] {
   return [
@@ -60,18 +58,18 @@ export function fetchContactsWithMessages(): Contact[] {
   ];
 }
 
-export async function initStore(store: AppStore) {
-  if (storeHasInitialized) return;
+export function initAppStore(): ThunkAction<Promise<void>, RootState, unknown, UnknownAction> {
+  return async function (dispatch, getState) {
+    // Set the login token from the local/sessionStorage (if exists).
+    await dispatch(AppUserThunks.initStore());
 
-  // Set the login token from the local/sessionStorage (if exists).
-  await store.dispatch(AppUserThunks.initStore());
-
-  // If we find a login token, we should load data that need login.
-  const logInToken = selectLogInToken(store.getState());
-  if (logInToken !== null) {
-    await store.dispatch(NotificationThunks.initStore());
-    initSocket({ logInToken, store });
-  }
-
-  storeHasInitialized = true;
+    // If we find a login token, we should load data that need login.
+    const logInToken = selectLogInToken(getState());
+    if (logInToken !== null) {
+      await dispatch(NotificationThunks.initStore());
+      await dispatch(initContactsStore());
+      initSocket({ logInToken, dispatch: store.dispatch });
+    }
+  };
 }
+

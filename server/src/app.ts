@@ -15,6 +15,7 @@ import { initAuthorization, socketIOAuth } from "./authorization";
 import { initUser } from "./users";
 import initDefaultAvatars from "./default-avatars";
 import { initContact } from "./contact";
+import { initNotifications } from "./notification";
 
 export type AppEnv = {
   jwtSecret: string,
@@ -54,6 +55,7 @@ export async function startApp(env: AppEnv) {
   initUser(router);
   initDefaultAvatars(router);
   initContact(router);
+  initNotifications(router);
 
   app.use(mount("/public", serve(resolve(__dirname, "../public"))));
   app.use(router.routes());

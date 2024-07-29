@@ -1,9 +1,8 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { AppDispatch, AppStore, RootState } from ".";
+import { AppDispatch, initAppStore, RootState } from ".";
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { User } from "./modeltypes";
-import { NotificationThunks } from "./notifications";
-import { closeSocket, initSocket } from "../socket";
+import { closeSocket } from "../socket";
 
 const LOGIN_TOKEN_KEY = "login-token";
 
@@ -118,11 +117,7 @@ export const AppUserThunks = {
       }
 
       dispatch(appUser.actions.setLogInToken(logInToken));
-
-      await dispatch(AppUserThunks.fetchAppUser());
-      await dispatch(NotificationThunks.initStore());
-
-      initSocket({ logInToken, store: ThunkAPI.getState() as AppStore });
+      await dispatch(initAppStore());
     },
   ),
 
