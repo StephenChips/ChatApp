@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { omit } from "lodash"
 import cls from "./MessageWindow.module.css";
 import CircularProgress from "@mui/material/CircularProgress";
 import DoneIcon from "@mui/icons-material/Done";
@@ -10,10 +11,11 @@ import { IconButton } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import {
   selectContactByUserID,
-  sendMessage,
+  addMessage,
   setMessageStatus,
 } from "../../../../store/contacts";
 import { useNavigate, useParams } from "react-router";
+import { useSocket } from "../../../../socket";
 
 type RowProps = {
   message: Message;
@@ -105,6 +107,10 @@ export function MessageWindow() {
   const navigate = useNavigate();
   const [textInput, setTextInput] = useState("");
 
+  const socket = useSocket();
+
+  if (!socket) return <></>;
+
   if (!currentContact) {
     return (
       <div
@@ -165,24 +171,25 @@ export function MessageWindow() {
       type: "text",
       text: textInput,
       senderID: appUser!.id,
-      sendTime: new Date().toISOString(),
+      recipientID: currentContactID,
+      sentAt: new Date().toISOString(),
       status: "sending",
     };
 
-    dispatch(
-      sendMessage({
-        contactUserID: currentContact!.user.id,
-        message,
-      }),
-    );
+    let status: Message["status"];
 
-    let status: Message["status"] = "succeeded";
+    dispatch(addMessage({
+      contactUserID: message.recipientID,
+      message
+    }));
 
     try {
       await sendMessageToServer(message);
+      status = "succeeded";
     } catch {
       status = "failed";
     }
+
     dispatch(
       setMessageStatus({
         contactUserID: currentContact!.user.id,
@@ -195,11 +202,9 @@ export function MessageWindow() {
   }
 
   async function sendMessageToServer(message: Message) {
-    return new Promise<void>((resolve) => {
-      setTimeout(()=> {
-        resolve();
-      }, 1000);
-    });
+    const io = socket!;
+    const msg = omit(message, "id", "status");
+    await io.emitWithAck("im/message", msg);
   }
 
   function onCloseMessageWindow() {

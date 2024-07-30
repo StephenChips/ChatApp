@@ -17,8 +17,9 @@ type Image = {
 type CommonMessageProps = {
   id: number;
   senderID: User["id"];
+  recipientID: User["id"],
   status: "succeeded" | "sending" | "failed";
-  sendTime: string; // UTC time in ISO string format.
+  sentAt: string; // UTC time in ISO string format.
 };
 
 export type TextMessage = CommonMessageProps & Text;

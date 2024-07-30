@@ -33,14 +33,12 @@ const contactsSlice = createSlice({
 
     addManyContacts: contactsAdapter.addMany,
 
-    sendMessage(
+    addMessage(
       state,
-      actions: PayloadAction<{
-        contactUserID: User["id"];
-        message: Message;
-      }>,
+      {
+        payload: { contactUserID, message },
+      }: PayloadAction<{ contactUserID: User["id"]; message: Message }>,
     ) {
-      const { contactUserID, message } = actions.payload;
       const contact = state.entities[contactUserID];
       contact?.messages.push(message);
     },
@@ -67,7 +65,7 @@ export const {
   deleteContact,
   addContact,
   addManyContacts,
-  sendMessage,
+  addMessage,
   setMessageStatus,
 } = contactsSlice.actions;
 
@@ -86,7 +84,7 @@ export function selectLastChatTime(
   state: RootState,
   contactUserID: User["id"],
 ) {
-  return selectLastChat(state, contactUserID)?.sendTime;
+  return selectLastChat(state, contactUserID)?.sentAt;
 }
 
 export function hasContact(state: RootState, userID: User["id"]) {
@@ -95,22 +93,30 @@ export function hasContact(state: RootState, userID: User["id"]) {
 
 export default contactsSlice.reducer;
 
-export function initContactsStore() : ThunkAction<Promise<void>, RootState, unknown, UnknownAction> {
+export function initContactsStore(): ThunkAction<
+  Promise<void>,
+  RootState,
+  unknown,
+  UnknownAction
+> {
   return async function (dispatch, getState) {
     const logInToken = selectLogInToken(getState())!;
     if (logInToken === null) return;
     const { data: contactUsers } = await axios("/api/getContacts", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${logInToken}`
-      }
+        Authorization: `Bearer ${logInToken}`,
+      },
     });
 
-    const contact = contactUsers.map((user: unknown) => ({
-      user: user,
-      messages: [],
-    } as Contact))
+    const contact = contactUsers.map(
+      (user: unknown) =>
+        ({
+          user: user,
+          messages: [],
+        }) as Contact,
+    );
 
     dispatch(addManyContacts(contact));
-  }
+  };
 }

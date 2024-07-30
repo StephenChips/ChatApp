@@ -57,7 +57,7 @@ export function initUser(router: Router) {
 
     const { id, name, avatar_url } = result.rows[0];
     ctx.body = {
-      id,
+      id: String(id),
       name,
       avatarURL: avatar_url
     };

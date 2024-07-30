@@ -68,7 +68,7 @@ export function initAppStore(): ThunkAction<Promise<void>, RootState, unknown, U
     if (logInToken !== null) {
       await dispatch(NotificationThunks.initStore());
       await dispatch(initContactsStore());
-      initSocket({ logInToken, dispatch: store.dispatch });
+      initSocket({ logInToken, dispatch: store.dispatch, getState: store.getState });
     }
   };
 }

@@ -11,6 +11,10 @@ type Message = {
   createdTime: string;
 };
 
+enum SocketIOEvents {
+  Message = "im/message"
+}
+
 
 /**
  * Users should pass it's JWT to the server when connecting to the
@@ -24,16 +28,16 @@ type Message = {
  */
 export function initIMSystem(io: SocketIO.Server) {
   io.on("connection", async (socket) => {
-      socket.on("message", (message: Message, callback) => {
+      socket.on(SocketIOEvents.Message, (message: Message, callback) => {
         const recipientSocket = onlineUserSockets.get(message.recipientID)
         const isRecipientOffline = recipientSocket === undefined
 
         if (isRecipientOffline) {
-          callback({ status: "failed" });
           return;
         }
 
-        recipientSocket.emit("message", message);
+        recipientSocket.emit(SocketIOEvents.Message, message);
+        callback();
       })
     })
 }

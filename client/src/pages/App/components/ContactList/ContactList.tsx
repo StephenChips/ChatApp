@@ -7,6 +7,7 @@ import { ListItemIcon, Menu, MenuItem } from "@mui/material";
 import { Delete } from "@mui/icons-material";
 import React from "react";
 import { DeleteUserDialogActions } from "../../../../store/deleteUserDialog";
+import { last } from "lodash";
 
 export interface ContactListProps {
   contacts: Contact[];
@@ -113,10 +114,8 @@ function ContactListItem({ contact }: { contact: Contact }) {
   const appUser = useAppSelector(selectAppUser)!;
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { userID } = useParams();
-  const currentContactID = userID === undefined ? undefined : Number(userID);
-  const latestChat =
-    contact.messages.length > 0 ? contact.messages[0] : undefined;
+  const { userID: currentContactID } = useParams();
+  const latestChat = last(contact.messages);
 
   let shouldShowSenderName = false;
   let latestChatText = "[No messages]";
@@ -141,7 +140,7 @@ function ContactListItem({ contact }: { contact: Contact }) {
       latestChatText = latestChat.text.slice(0, 30);
     }
 
-    const date = new Date(latestChat.sendTime);
+    const date = new Date(latestChat.sentAt);
     const now = new Date();
 
     if (lessThanAMinuteFromNow(date)) {
