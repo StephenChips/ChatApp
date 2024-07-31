@@ -33,3 +33,10 @@ CREATE TABLE IF NOT EXISTS chatapp.contacts (
     CHECK (user_id < contact_user_id),
     CONSTRAINT pk_contacts PRIMARY KEY (user_id, contact_user_id)
 );
+
+CREATE TABLE IF NOT EXISTS chatapp.offline_messages (
+    id SERIAL,
+    user_id INT REFERENCES chatapp.users(id),
+    sent_at TIMESTAMP,
+    message TEXT
+);
