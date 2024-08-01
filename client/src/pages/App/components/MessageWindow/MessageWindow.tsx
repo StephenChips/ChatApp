@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { omit } from "lodash"
+import { omit } from "lodash";
 import cls from "./MessageWindow.module.css";
 import CircularProgress from "@mui/material/CircularProgress";
 import DoneIcon from "@mui/icons-material/Done";
@@ -165,9 +165,9 @@ export function MessageWindow() {
   async function handleSendingText(e: React.FormEvent) {
     e.preventDefault();
 
-    const messageID = currentContact!.messages.length;
-    const message: Message = {
-      id: messageID,
+    let status: Message["status"];
+
+    const msg: Omit<TextMessage, "id"> = {
       type: "text",
       text: textInput,
       senderID: appUser!.id,
@@ -176,32 +176,21 @@ export function MessageWindow() {
       status: "sending",
     };
 
-    let status: Message["status"];
-
-    dispatch(addMessage({
-      contactUserID: message.recipientID,
-      message
-    }));
+    const id = await dispatch(addMessage(msg.recipientID, msg));
 
     try {
-      await sendMessageToServer(message);
+      await sendMessageToServer({ ...msg, id });
       status = "succeeded";
     } catch {
       status = "failed";
     }
-
-    dispatch(
-      setMessageStatus({
-        contactUserID: currentContact!.user.id,
-        messageID,
-        status,
-      }),
-    );
+    
+    await dispatch(setMessageStatus(id, status));
 
     setTextInput("");
   }
 
-  async function sendMessageToServer(message: Message) {
+  async function sendMessageToServer<T extends Message>(message: T) {
     const io = socket!;
     const msg = omit(message, "id", "status");
     await io.emitWithAck("im/message", msg);

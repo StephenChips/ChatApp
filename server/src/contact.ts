@@ -77,7 +77,7 @@ export function initContact(route: Router) {
       );
 
       ctx.body = result.rows.map((item) => ({
-        id: item.id,
+        id: String(item.id),
         name: item.name,
         avatarURL: item.avatar_url
       }));

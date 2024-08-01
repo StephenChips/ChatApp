@@ -1,11 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { AppDispatch, RootState } from "./store";
 import { NotificationActions } from "./store/notifications";
-import {
-  addMessage,
-  selectContactByUserID,
-} from "./store/contacts";
-import { Message } from "./store/modeltypes";
+import { addMessage } from "./store/contacts";
 
 let socket: Socket | undefined;
 
@@ -16,7 +12,6 @@ export function useSocket() {
 export function initSocket({
   logInToken,
   dispatch,
-  getState,
 }: {
   logInToken: string;
   dispatch: AppDispatch;
@@ -38,20 +33,15 @@ export function initSocket({
     dispatch(NotificationActions.addOne(notification));
   });
 
-  socket.on("im/message", (msg) => {
-    const contact = selectContactByUserID(getState(), msg.senderID);
-    const message: Message = {
-      id: contact.messages.length,
+  socket.on("im/message", async (msg) => {
+    const message = {
       status: "succeeded",
       ...msg,
     };
 
-    dispatch(
-      addMessage({
-        contactUserID: msg.senderID,
-        message,
-      }),
-    );
+    console.log(message)
+
+    await dispatch(addMessage(message.senderID, message));
   });
 
   return socket;
