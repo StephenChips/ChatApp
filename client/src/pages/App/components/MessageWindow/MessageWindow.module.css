@@ -73,6 +73,10 @@
   font-weight: bold;
 }
 
+.message-inputbox .sending-button[disabled] {
+  color: rgb(200, 220, 237);
+}
+
 .message-inputbox input {
   outline: none;
   border: none;

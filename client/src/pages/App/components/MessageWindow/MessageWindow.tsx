@@ -151,7 +151,7 @@ export function MessageWindow() {
       <div className={cls["message-list"]}>{messageRows}</div>
       <form className={cls["message-inputbox"]} onSubmit={handleSendingText}>
         <input type="text" value={textInput} onChange={handleInputtingText} />
-        <button type="submit" className={cls["sending-button"]}>
+        <button type="submit" className={cls["sending-button"]} disabled={textInput === ""}>
           SEND
         </button>
       </form>
