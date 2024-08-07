@@ -1,5 +1,5 @@
 import Router = require("koa-router");
-import { getPool } from "./database";
+import { getPool, transaction } from "./database";
 import { httpAuth } from "./authorization";
 
 export function initNotifications(router: Router) {
@@ -57,24 +57,18 @@ export function initNotifications(router: Router) {
   });
 
   router.post("/api/setNotificationHasRead", httpAuth, async (ctx) => {
-    const pool = getPool();
     type RequestBody = { id: number; hasRead: boolean }[];
     const list = ctx.request.body as RequestBody;
 
-    let client = await pool.connect();
-    try {
-      await Promise.all(
-        list.map(({ id, hasRead }) => {
-          return pool.query(
-            "UPDATE chatapp.add_contact_request_notifications SET has_read = $1 WHERE id = $2",
-            [hasRead, id]
-          );
-        })
+    await transaction((client) => {
+      const promises = list.map(({ id, hasRead }) =>
+        client.query(
+          "UPDATE chatapp.add_contact_request_notifications SET has_read = $1 WHERE id = $2",
+          [hasRead, id]
+        )
       );
 
-      ctx.body = null;
-    } finally {
-      client?.release();
-    }
+      return Promise.all(promises);
+    });
   });
 }

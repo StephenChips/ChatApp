@@ -1,8 +1,7 @@
 import Router = require("koa-router");
 import { emitEvent, httpAuth } from "./authorization";
 import { requestBodyContentType } from "./utils";
-import { getPool } from "./database";
-import { Context } from "koa";
+import { getPool, transaction } from "./database";
 import {
   QueryArrayConfig,
   QueryArrayResult,
@@ -45,14 +44,11 @@ interface IDatabaseQuery {
 export function initContact(route: Router) {
   const pool = getPool();
 
-  route.post(
-    "/api/getContacts",
-    httpAuth,
-    async (ctx) => {
-      const userID = ctx.request.jwt.payload.sub;
+  route.post("/api/getContacts", httpAuth, async (ctx) => {
+    const userID = ctx.request.jwt.payload.sub;
 
-      const result = await pool.query(
-        `
+    const result = await pool.query(
+      `
       SELECT
         id,
         name,
@@ -73,16 +69,15 @@ export function initContact(route: Router) {
         )
       INNER JOIN chatapp.users ON contact_user_id = chatapp.users.id
     `,
-        [userID]
-      );
+      [userID]
+    );
 
-      ctx.body = result.rows.map((item) => ({
-        id: String(item.id),
-        name: item.name,
-        avatarURL: item.avatar_url
-      }));
-    }
-  );
+    ctx.body = result.rows.map((item) => ({
+      id: String(item.id),
+      name: item.name,
+      avatarURL: item.avatar_url,
+    }));
+  });
 
   route.post(
     "/api/createAddContactRequest",
@@ -97,18 +92,15 @@ export function initContact(route: Router) {
       if (recipientID === requesterID) {
         ctx.throw(400, "The recipient is yourself");
       }
+      if (await alreadyInTheContactList(pool, recipientID, requesterID)) {
+        ctx.throw(400, "Already in the contact list");
+      }
 
-      let client = await pool.connect();
+      if (!(await isUserExists(pool, requestBody.recipientID))) {
+        ctx.throw(400, "No such recipient");
+      }
 
-      try {
-        if (await alreadyInTheContactList(client, recipientID, requesterID)) {
-          ctx.throw(400, "Already in the contact list");
-        }
-
-        if (!await isUserExists(client, requestBody.recipientID)) {
-          ctx.throw(400, "No such recipient");
-        }
-
+      const id = await transaction(async (client) => {
         const createdAt = new Date().toISOString();
 
         const result = await client.query(
@@ -138,22 +130,22 @@ export function initContact(route: Router) {
           status: "pending",
         });
 
-        const newNotification = await getNotification(client, id);
+        return id;
+      });
 
-        emitEvent("notification/new", requesterID, newNotification);
-        emitEvent("notification/new", recipientID, newNotification);
+      const newNotification = await getNotification(pool, id);
 
-        ctx.body = null;
-      } finally {
-        client.release();
-      }
+      emitEvent("notification/new", requesterID, newNotification);
+      emitEvent("notification/new", recipientID, newNotification);
+
+      ctx.body = null;
     }
   );
 
   route.post(
     "/api/setAddContactRequestStatus",
     httpAuth,
-    async (ctx: Context, next: () => void) => {
+    async (ctx) => {
       type RequestBody = { requestID: string; status: string };
       const requestBody = ctx.request.body as RequestBody;
 
@@ -164,23 +156,28 @@ export function initContact(route: Router) {
         ctx.throw(400, "Invalid arguments");
       }
 
-      const client = await pool.connect();
-      try {
-        const result = await client.query(
-          "SELECT requester_id FROM chatapp.add_contact_requests WHERE id = $1 AND recipient_id = $2",
-          [requestBody.requestID, recipientID]
-        );
+      const result = await pool.query(
+        "SELECT requester_id FROM chatapp.add_contact_requests WHERE id = $1 AND recipient_id = $2",
+        [requestBody.requestID, recipientID]
+      );
 
-        if (result.rows.length === 0) {
-          ctx.throw("No such add contact request");
-        }
+      if (result.rows.length === 0) {
+        ctx.throw("No such add contact request");
+      }
 
-        const requesterID = Number(result.rows[0].requester_id);
-        
-        if (await alreadyInTheContactList(client, String(requesterID), String(recipientID))) {
-          ctx.throw(400, "Already in the contact list");
-        }
+      const requesterID = Number(result.rows[0].requester_id);
 
+      if (
+        await alreadyInTheContactList(
+          pool,
+          String(requesterID),
+          String(recipientID)
+        )
+      ) {
+        ctx.throw(400, "Already in the contact list");
+      }
+      
+      const notificationID = await transaction(async (client) => {
         await client.query(
           "UPDATE chatapp.add_contact_requests SET status = $1 WHERE id = $2;",
           [status, addContactRequestID]
@@ -198,7 +195,7 @@ export function initContact(route: Router) {
         // Now the request has been agreed or rejected by the recipient,
         // and it's time to notify the requester.
 
-        const notificationID = await insertAddContactRequestNotification(
+        return await insertAddContactRequestNotification(
           client,
           {
             createdAt: new Date().toISOString(),
@@ -207,15 +204,12 @@ export function initContact(route: Router) {
             status,
           }
         );
+      })
 
-        const notification = await getNotification(client, notificationID);
-        emitEvent("notification/new", requesterID, notification);
+      const notification = await getNotification(pool, notificationID);
+      emitEvent("notification/new", requesterID, notification);
 
-        ctx.body = null;
-      } finally {
-        client.release();
-        next();
-      }
+      ctx.body = null;
     }
   );
 }
@@ -291,10 +285,14 @@ async function insertAddContactRequestNotification(
     [createdAt, false, addContactRequestID, userID, status]
   );
 
-  return rows[0].id;
+  return Number(rows[0].id);
 }
 
-async function alreadyInTheContactList(client: IDatabaseQuery, userID_1: string, userID_2: string) {
+async function alreadyInTheContactList(
+  client: IDatabaseQuery,
+  userID_1: string,
+  userID_2: string
+) {
   let smallerID: string;
   let greaterID: string;
 

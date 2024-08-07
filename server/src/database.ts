@@ -1,18 +1,24 @@
 import { readFile } from "fs/promises";
 import { Pool, PoolClient, PoolConfig } from "pg";
 
-let pool: Pool
+let pool: Pool;
 
 export function getPool() {
   return pool;
 }
 
-export async function connect(callback: (client: PoolClient) => Promise<void>) {
+export async function transaction<T>(
+  callback: (client: PoolClient) => Promise<T>
+) {
   const client = await pool.connect();
   try {
-    await callback(client);
+    await client.query("BEGIN");
+    const res = await callback(client);
+    await client.query("COMMIT");
+    return res;
   } catch (e) {
-    console.error(e);
+    await client.query("ROLLBACK");
+    throw e;
   } finally {
     client.release();
   }
@@ -24,7 +30,7 @@ export function initDatabasePool(poolConfig: PoolConfig) {
 
 /**
  * @param filePath The path of the SQL file to be executed.
- * @returns 
+ * @returns
  */
 export async function runSQLFile(filePath: string) {
   const result = await readFile(filePath);
