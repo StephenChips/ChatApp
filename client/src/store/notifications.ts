@@ -50,6 +50,10 @@ const notificationSlice = createSlice({
       }
     },
   },
+  
+  extraReducers(builder) {
+    builder.addCase("resetState", () => initialState);
+  },
 });
 
 export const NotificationActions = notificationSlice.actions;

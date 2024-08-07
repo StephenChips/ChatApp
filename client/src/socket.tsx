@@ -5,7 +5,7 @@ import { addMessage } from "./store/contacts";
 
 let socket: Socket | undefined;
 
-export function useSocket() {
+export function getSocket() {
   return socket;
 }
 

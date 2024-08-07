@@ -60,6 +60,10 @@ const contactsSlice = createSlice({
       }
     },
   },
+
+  extraReducers(builder) {
+    builder.addCase("resetState", () => initialState);
+  },
 });
 
 export const { deleteContact, addContact, addManyContacts } =

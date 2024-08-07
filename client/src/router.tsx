@@ -13,6 +13,10 @@ export const router = createBrowserRouter([
     element: <App />,
     children: [
       {
+        index: true,
+        element: <MessageWindow />
+      },
+      {
         path: "/contact/:userID/chat",
         element: <MessageWindow />,
       },

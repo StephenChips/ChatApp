@@ -36,13 +36,19 @@ const store = createSlice({
       state.alertText = "";
       state.visible = false;
     },
+
+    reset() {
+      return initialState;
+    },
   },
 
   extraReducers(builder) {
-    builder.addCase("/appUser/logOut/fulfilled", (state) => {
-      store.caseReducers.hide(state);
-    })
-  }
+    builder
+      .addCase("/appUser/logOut/fulfilled", (state) => {
+        store.caseReducers.hide(state);
+      })
+      .addCase("resetState", () => initialState);
+  },
 });
 
 export const AppAlertActions = store.actions;

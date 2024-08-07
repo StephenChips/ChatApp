@@ -209,7 +209,7 @@ export function SignUp() {
     try {
       const response = await axios.post("/api/createUser", { name: username, password });
       const userID = response.data.id;
-      dispatch(AppUserThunks.logIn({ userID, password, rememberMe: false }));
+      await dispatch(AppUserThunks.logIn({ userID, password, rememberMe: false }));
       navigate("/welcome");
     } catch (e) {
       const error = e as Error;

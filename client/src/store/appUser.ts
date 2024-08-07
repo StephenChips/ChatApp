@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { AppDispatch, initAppStore, RootState } from ".";
+import { AppDispatch, initAppStore, resetState, RootState } from ".";
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { User } from "./modeltypes";
 import { closeSocket } from "../socket";
@@ -58,6 +58,10 @@ const appUser = createSlice({
       state.appUser.avatarURL = avatarURL;
     },
   },
+
+  extraReducers(builder) {
+    builder.addCase("resetState", () => initialState);
+  },
 });
 
 export default appUser.reducer;
@@ -65,7 +69,8 @@ export default appUser.reducer;
 export const selectLogInToken = (state: RootState) => state.appUser.logInToken;
 export const selectAppUser = (state: RootState) => state.appUser.appUser;
 export const selectHasLoggedIn = (state: RootState) =>
-  selectLogInToken(state) !== null;
+  selectLogInToken(state) !== null &&
+  selectAppUser(state) !== null;
 
 export const AppUserThunks = {
   initStore: createAsyncThunk("/appUser/initStore", async (_, { dispatch }) => {
@@ -116,7 +121,6 @@ export const AppUserThunks = {
         sessionStorage.setItem(LOGIN_TOKEN_KEY, logInToken);
       }
 
-      dispatch(appUser.actions.setLogInToken(logInToken));
       await dispatch(initAppStore());
     },
   ),
@@ -124,9 +128,8 @@ export const AppUserThunks = {
   logOut: createAsyncThunk("/appUser/logOut", (_, { dispatch }) => {
     localStorage.removeItem(LOGIN_TOKEN_KEY);
     sessionStorage.removeItem(LOGIN_TOKEN_KEY);
-    dispatch(appUser.actions.setLogInToken(null));
-    dispatch(appUser.actions.setAppUser(null));
     closeSocket();
+    dispatch(resetState());
   }),
 
   fetchAppUser: createAsyncThunk(

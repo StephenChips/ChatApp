@@ -40,6 +40,10 @@ const slice = createSlice({
       };
     },
   },
+
+  extraReducers(builder) {
+    builder.addCase("resetState", () => initialState);
+  },
 });
 
 export const DeleteUserDialogActions = slice.actions;

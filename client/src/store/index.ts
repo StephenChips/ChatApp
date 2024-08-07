@@ -25,7 +25,14 @@ export const useAppDispatch = useDispatch.withTypes<AppDispatch>();
 export const useAppSelector = useSelector.withTypes<RootState>();
 export const useAppStore = useStore.withTypes<AppStore>();
 
-export function initAppStore(): ThunkAction<Promise<void>, RootState, unknown, UnknownAction> {
+export const resetState = () => ({ type: "resetState" });
+
+export function initAppStore(): ThunkAction<
+  Promise<void>,
+  RootState,
+  unknown,
+  UnknownAction
+> {
   return async function (dispatch, getState) {
     // Set the login token from the local/sessionStorage (if exists).
     await dispatch(AppUserThunks.initStore());
@@ -35,8 +42,11 @@ export function initAppStore(): ThunkAction<Promise<void>, RootState, unknown, U
     if (logInToken !== null) {
       await dispatch(NotificationThunks.initStore());
       await dispatch(initContactsStore());
-      initSocket({ logInToken, dispatch: store.dispatch, getState: store.getState });
+      initSocket({
+        logInToken,
+        dispatch: store.dispatch,
+        getState: store.getState,
+      });
     }
   };
 }
-

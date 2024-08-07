@@ -15,7 +15,7 @@ import {
   setMessageStatus,
 } from "../../../../store/contacts";
 import { useNavigate, useParams } from "react-router";
-import { useSocket } from "../../../../socket";
+import { getSocket } from "../../../../socket";
 
 type RowProps = {
   message: Message;
@@ -107,10 +107,6 @@ export function MessageWindow() {
   const navigate = useNavigate();
   const [textInput, setTextInput] = useState("");
 
-  const socket = useSocket();
-
-  if (!socket) return <></>;
-
   if (!currentContact) {
     return (
       <div
@@ -191,7 +187,7 @@ export function MessageWindow() {
   }
 
   async function sendMessageToServer<T extends Message>(message: T) {
-    const io = socket!;
+    const io = getSocket()!;
     const msg = omit(message, "id", "status");
     await io.emitWithAck("im/message", msg);
   }
