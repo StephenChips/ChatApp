@@ -254,12 +254,12 @@ async function getNotification(q: IDatabaseQuery, notificationID: number) {
       request: {
         id: rows[0].add_contact_request_id,
         fromUser: {
-          id: rows[0].requester_id,
+          id: String(rows[0].requester_id),
           name: rows[0].requester_name,
           avatarURL: rows[0].requester_avatar_url,
         },
         toUser: {
-          id: rows[0].recipient_id,
+          id: String(rows[0].recipient_id),
           name: rows[0].recipient_name,
           avatarURL: rows[0].recipient_avatar_url,
         },

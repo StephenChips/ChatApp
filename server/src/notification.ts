@@ -42,12 +42,12 @@ export function initNotifications(router: Router) {
       request: {
         id: row.add_contact_request_id,
         fromUser: {
-          id: row.requester_id,
+          id: String(row.requester_id),
           name: row.requester_name,
           avatarURL: row.requester_avatar_url,
         },
         toUser: {
-          id: row.recipient_id,
+          id: String(row.recipient_id),
           name: row.recipient_name,
           avatarURL: row.recipient_avatar_url,
         },
