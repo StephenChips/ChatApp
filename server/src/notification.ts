@@ -70,5 +70,7 @@ export function initNotifications(router: Router) {
 
       return Promise.all(promises);
     });
+
+    ctx.body = null;
   });
 }
