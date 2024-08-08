@@ -19,8 +19,8 @@ function NotificationItem({ notification }: { notification: Notification }) {
   const dispatch = useAppDispatch();
   const appUser = useAppSelector(selectAppUser);
   const logInToken = useAppSelector(selectLogInToken);
-  const isNew = !notification.hasRead
-  
+  const isNew = !notification.hasRead;
+
   if (!appUser) return <></>;
 
   let notificationMessage: JSX.Element;
@@ -154,12 +154,12 @@ function NotificationItem({ notification }: { notification: Notification }) {
     await axios("/api/setAddContactRequestStatus", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${logInToken}`,
+        Authorization: `Bearer ${logInToken}`,
       },
       data: {
         requestID: notification.request.id,
-        status: newStatus
-      }
+        status: newStatus,
+      },
     });
 
     const newNotification: AddContactRequestNotification = {
@@ -174,40 +174,34 @@ function NotificationItem({ notification }: { notification: Notification }) {
   }
 }
 
-function NotificationList({
-  notifications,
-}: {
-  notifications: Notification[];
-}) {
-  return (
-    <Box>
-      {notifications.map((notification) => (
-        <NotificationItem notification={notification} key={notification.id} />
-      ))}
-    </Box>
-  );
-}
-
 export function NotificationWindow() {
   const navigate = useNavigate();
   const notifications = useAppSelector(selectAllNotifications);
 
+  const HEADER_HEIGHT = "60px";
+
   return (
-    <Box height="60px" bgcolor={"white"}>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        margin="0 auto"
-        width="95%"
-        height="100%"
-      >
-        <Typography variant="h6">Nofitications</Typography>
-        <IconButton onClick={() => navigate("/")}>
-          <Close />
-        </IconButton>
+    <>
+      <Box height={HEADER_HEIGHT} bgcolor={"white"}>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          margin="0 auto"
+          width="95%"
+          height="100%"
+        >
+          <Typography variant="h6">Nofitications</Typography>
+          <IconButton onClick={() => navigate("/")}>
+            <Close />
+          </IconButton>
+        </Box>
       </Box>
-      <NotificationList notifications={notifications} />
-    </Box>
+      <Box overflow="auto" height={`calc(100% - ${HEADER_HEIGHT})`}>
+        {notifications.map((notification) => (
+          <NotificationItem notification={notification} key={notification.id} />
+        ))}
+      </Box>
+    </>
   );
 }
