@@ -13,7 +13,7 @@ import { selectLogInToken } from "./appUser";
 
 const notificationAdapter = createEntityAdapter<Notification>({
   sortComparer: (n1, n2) =>
-    differenceInMilliseconds(n1.createdAt, n2.createdAt),
+    differenceInMilliseconds(n2.createdAt, n1.createdAt),
 });
 
 const initialState = notificationAdapter.getInitialState({
@@ -126,7 +126,7 @@ export const NotificationThunks = {
             Authorization:
               logInToken === null ? undefined : `Bearer ${logInToken}`,
           },
-        });
+        })
 
         dispatch(NotificationActions.upsertMany(notifications));
       } catch (e) {
