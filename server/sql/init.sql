@@ -22,7 +22,6 @@ CREATE TABLE IF NOT EXISTS chatapp.add_contact_request_notifications (
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     has_read BOOLEAN,
-    request_status TEXT,
     add_contact_request_id INT REFERENCES chatapp.add_contact_requests(id),
     user_id INT REFERENCES chatapp.users(id)
 );

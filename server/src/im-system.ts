@@ -63,7 +63,6 @@ async function sendOfflineMessages(socket: SocketIO.Socket, userID: UserID) {
 
   for (const { message: messageText } of rows) {
     const message = JSON.parse(messageText);
-    console.log(message)
     socket.emit(SocketIOEvents.Message, message);
   }
 

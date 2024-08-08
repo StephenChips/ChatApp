@@ -26,7 +26,18 @@ const notificationSlice = createSlice({
   reducers: {
     upsertOne: notificationAdapter.upsertOne,
     setOne: notificationAdapter.setOne,
-    upsertMany: notificationAdapter.upsertMany,
+    upsertMany(
+      state,
+      { payload: notification }: PayloadAction<Notification[]>,
+    ) {
+      notificationAdapter.upsertMany(state, notification);
+      state.badgeNumber = 0;
+      for (const id of state.ids) {
+        if (!state.entities[id].hasRead) {
+          state.badgeNumber++;
+        }
+      }
+    },
     readAll(state) {
       for (const id of state.ids) {
         state.entities[id].hasRead = true;
@@ -50,7 +61,7 @@ const notificationSlice = createSlice({
       }
     },
   },
-  
+
   extraReducers(builder) {
     builder.addCase("resetState", () => initialState);
   },
@@ -117,7 +128,7 @@ export const NotificationThunks = {
           },
         });
 
-        dispatch(NotificationActions.addMany(notifications));
+        dispatch(NotificationActions.upsertMany(notifications));
       } catch (e) {
         const error = e as AxiosError;
         throw error.response?.data;

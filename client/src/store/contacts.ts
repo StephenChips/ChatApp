@@ -34,6 +34,8 @@ const contactsSlice = createSlice({
 
     addManyContacts: contactsAdapter.addMany,
 
+    upsertManyContacts: contactsAdapter.upsertMany,
+
     addMessage(
       state,
       {
@@ -66,7 +68,7 @@ const contactsSlice = createSlice({
   },
 });
 
-export const { deleteContact, addContact, addManyContacts } =
+export const { deleteContact, addContact, upsertManyContacts } =
   contactsSlice.actions;
 
 export function addMessage(
@@ -183,8 +185,6 @@ export function initContactsStore(): ThunkAction<
       });
     }
 
-    console.log(contacts);
-
-    dispatch(addManyContacts(contacts));
+    dispatch(upsertManyContacts(contacts));
   };
 }

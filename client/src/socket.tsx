@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { AppDispatch, RootState } from "./store";
-import { NotificationActions } from "./store/notifications";
-import { addMessage } from "./store/contacts";
+import { NotificationThunks } from "./store/notifications";
+import { addMessage, initContactsStore } from "./store/contacts";
 
 let socket: Socket | undefined;
 
@@ -29,8 +29,12 @@ export function initSocket({
     console.log(error);
   });
 
-  socket.on("notification/new", (notification) => {
-    dispatch(NotificationActions.addOne(notification));
+  socket.on("notifications/updated", () => {
+    dispatch(NotificationThunks.initStore());
+  })
+
+  socket.on("contacts/updated", () => {
+    dispatch(initContactsStore());
   });
 
   socket.on("im/message", async (msg) => {

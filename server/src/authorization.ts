@@ -128,14 +128,15 @@ export async function httpAuth(ctx: Koa.Context, next: Koa.Next) {
 export type UserID = string;
 export const onlineUserSockets = new Map<UserID, SocketIO.Socket>();
 
-export function emitEvent(event: string, userID: string | number, data: any) {
+export function emitEvent(event: string, userID: string | number, data?: any) {
   if (typeof userID === "number") {
     userID = String(userID);
   }
 
   const recipientSocket = onlineUserSockets.get(userID);
   if (recipientSocket) {
-    recipientSocket.emit(event, data);
+    if (data) recipientSocket.emit(event, data);
+    else recipientSocket.emit(event);
   }
 }
 
@@ -165,7 +166,7 @@ export async function socketIOAuth(
   console.log(`User (ID: ${userID}) connected`);
 
   socket.on("disconnect", () => {
-    console.log(`User (UserID: ${userID}) disconnected.`)
+    console.log(`User (UserID: ${userID}) disconnected.`);
     onlineUserSockets.delete(userID);
   });
 

@@ -2,10 +2,9 @@ import { format } from "date-fns";
 import { Close } from "@mui/icons-material";
 import { Box, Button, IconButton, Typography } from "@mui/material";
 import { useNavigate } from "react-router";
-import { useAppDispatch, useAppSelector } from "../../store";
+import { useAppSelector } from "../../store";
 import {
   selectAllNotifications,
-  NotificationActions,
 } from "../../store/notifications";
 import {
   AddContactRequestNotification,
@@ -16,7 +15,6 @@ import { selectAppUser, selectLogInToken } from "../../store/appUser";
 import axios from "axios";
 
 function NotificationItem({ notification }: { notification: Notification }) {
-  const dispatch = useAppDispatch();
   const appUser = useAppSelector(selectAppUser);
   const logInToken = useAppSelector(selectLogInToken);
   const isNew = !notification.hasRead;
@@ -161,16 +159,6 @@ function NotificationItem({ notification }: { notification: Notification }) {
         status: newStatus,
       },
     });
-
-    const newNotification: AddContactRequestNotification = {
-      ...notification,
-      request: {
-        ...notification.request,
-        requestStatus: newStatus,
-      },
-    };
-
-    dispatch(NotificationActions.setOne(newNotification));
   }
 }
 
