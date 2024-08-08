@@ -1,11 +1,7 @@
 import { createContext, useEffect, useRef, useState } from "react";
 import cls from "./App.module.css";
 import { ContactList } from "./components/ContactList/ContactList";
-import {
-  useAppDispatch,
-  useAppSelector,
-  useAppStore,
-} from "../../store";
+import { useAppDispatch, useAppSelector, useAppStore } from "../../store";
 import {
   selectAllContacts,
   selectContactByUserID,
@@ -32,7 +28,10 @@ import {
   Check,
 } from "@mui/icons-material";
 import { Outlet, useLocation, useNavigate, type Location } from "react-router";
-import { NotificationActions, NotificationThunks, selectBadgeNumber } from "../../store/notifications";
+import {
+  NotificationThunks,
+  selectNumberOfUnreadNotifications,
+} from "../../store/notifications";
 import { DeleteUserDialogActions } from "../../store/deleteUserDialog";
 import { AppAlert } from "./components/AppAlert/AppAlert";
 import { NavigateEffect } from "../../components/NavigateEffect";
@@ -79,9 +78,6 @@ export function App() {
     if (previousLocation?.pathname === "/notifications") {
       // When we've left the notification
       dispatch(NotificationThunks.readAll());
-    } else if (currentLocation.pathname === "/notifications") {
-      // When we've entered the notification page
-      dispatch(NotificationActions.setBadgeNumber(0));
     }
   });
 
@@ -102,7 +98,9 @@ export function App() {
     else return selectContactByUserID(state, currentContactUserID);
   });
 
-  const badgeNumber = useAppSelector(selectBadgeNumber);
+  const unreadNotificationCount = useAppSelector(
+    selectNumberOfUnreadNotifications,
+  );
 
   const context: MainPageContext = {
     currentContact,
@@ -153,7 +151,7 @@ export function App() {
               title="System Notifications"
               onClick={() => navigate("/notifications")}
             >
-              <Badge badgeContent={badgeNumber} color="primary">
+              <Badge badgeContent={unreadNotificationCount} color="primary">
                 <Notifications fontSize="small" />
               </Badge>
             </IconButton>

@@ -10,15 +10,14 @@ import { Notification } from "./modeltypes";
 import { RootState } from ".";
 import axios, { AxiosError } from "axios";
 import { selectLogInToken } from "./appUser";
+import { countIf } from "../utils";
 
 const notificationAdapter = createEntityAdapter<Notification>({
   sortComparer: (n1, n2) =>
     differenceInMilliseconds(n2.createdAt, n1.createdAt),
 });
 
-const initialState = notificationAdapter.getInitialState({
-  badgeNumber: 0 as number,
-});
+const initialState = notificationAdapter.getInitialState();
 
 const notificationSlice = createSlice({
   name: "notifications",
@@ -31,34 +30,17 @@ const notificationSlice = createSlice({
       { payload: notification }: PayloadAction<Notification[]>,
     ) {
       notificationAdapter.upsertMany(state, notification);
-      state.badgeNumber = 0;
-      for (const id of state.ids) {
-        if (!state.entities[id].hasRead) {
-          state.badgeNumber++;
-        }
-      }
     },
     readAll(state) {
       for (const id of state.ids) {
         state.entities[id].hasRead = true;
       }
     },
-    setBadgeNumber(state, { payload }: PayloadAction<number>) {
-      state.badgeNumber = payload;
-    },
     addOne(state, { payload: notification }: PayloadAction<Notification>) {
       notificationAdapter.addOne(state, notification);
-      if (!notification.hasRead) {
-        state.badgeNumber++;
-      }
     },
     addMany(state, { payload: notifications }: PayloadAction<Notification[]>) {
       notificationAdapter.addMany(state, notifications);
-      for (const notification of notifications) {
-        if (!notification.hasRead) {
-          state.badgeNumber++;
-        }
-      }
     },
   },
 
@@ -77,8 +59,11 @@ export const {
   selectTotal: selectTotalOfNotifications,
 } = notificationAdapter.getSelectors<RootState>((state) => state.notifications);
 
-export function selectBadgeNumber(state: RootState) {
-  return state.notifications.badgeNumber;
+export function selectNumberOfUnreadNotifications(state: RootState) {
+  return countIf(
+    state.notifications.ids,
+    (id) => !state.notifications.entities[id].hasRead,
+  );
 }
 
 export default notificationSlice.reducer;
@@ -111,7 +96,6 @@ export const NotificationThunks = {
       }
 
       dispatch(notificationSlice.actions.readAll());
-      dispatch(notificationSlice.actions.setBadgeNumber(0));
     };
   },
 
@@ -126,7 +110,7 @@ export const NotificationThunks = {
             Authorization:
               logInToken === null ? undefined : `Bearer ${logInToken}`,
           },
-        })
+        });
 
         dispatch(NotificationActions.upsertMany(notifications));
       } catch (e) {
