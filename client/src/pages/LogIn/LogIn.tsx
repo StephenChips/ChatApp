@@ -14,23 +14,39 @@ import { useNavigate } from "react-router";
 import { RADIAL_GRADIENT_BACKGROUND } from "../../constants";
 import { PasswordField } from "../../components/PasswordField";
 import { useAppDispatch, useAppSelector } from "../../store";
-import { AppUserThunks, selectHasLoggedIn } from "../../store/appUser";
+import {
+  AppUserThunks,
+  selectHasLoggedIn,
+  selectLogOutReason,
+} from "../../store/appUser";
 
 const CHATAPP_ID_INPUT_ELEMENT_ID = "chatapp-id";
 const PASSWORD_INPUT_ELEMENT_ID = "password";
 
 export function LogIn() {
   const dispatch = useAppDispatch();
-  const hasLoggedIn = useAppSelector(selectHasLoggedIn);
-  const [rememberMe, setRememberMe] = useState(false);
-  const [userID, setUserID] = useState("");
-  const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const hasLoggedIn = useAppSelector(selectHasLoggedIn);
+  const logOutReason = useAppSelector(selectLogOutReason);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [userID, setUserID] = useState(() =>
+    logOutReason?.type === "password has changed"
+      ? String(logOutReason.userID)
+      : "",
+  );
+  const [password, setPassword] = useState("");
 
   const [alertContent, setAlertContent] = useState<{
     severity: AlertColor;
     text: string;
-  } | null>(null);
+  } | null>(() =>
+    logOutReason?.type === "password has changed"
+      ? {
+          severity: "info",
+          text: "The password has changed, please log in again.",
+        }
+      : null,
+  );
 
   if (hasLoggedIn) {
     return <NavigateEffect to="/" />;
@@ -153,18 +169,16 @@ export function LogIn() {
     e.preventDefault();
 
     try {
-      await dispatch(AppUserThunks.logIn({
-        userID,
-        password,
-        rememberMe
-      })).unwrap();
+      await dispatch(
+        AppUserThunks.logIn({
+          userID,
+          password,
+          rememberMe,
+        }),
+      ).unwrap();
     } catch (e) {
       const error = e as Error;
-      showAlert("error", error.message);
+      setAlertContent({ severity: "error", text: error.message });
     }
-  }
-
-  function showAlert(severity: AlertColor, text: string) {
-    setAlertContent({ severity, text });
   }
 }

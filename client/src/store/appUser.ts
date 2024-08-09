@@ -26,14 +26,21 @@ export type AvatarSource =
   | { from: "url"; url: string }
   | { from: "uploaded-image"; imageFile: File };
 
+export type LogOutReason = {
+  type: "password has changed",
+  userID: User["id"]
+}
+
 export type AppUserStore = {
   logInToken: string | null;
   appUser: User | null;
+  logOutReason: LogOutReason | null
 };
 
 const initialState: AppUserStore = {
   logInToken: null,
   appUser: null,
+  logOutReason: null
 };
 
 const appUser = createSlice({
@@ -57,8 +64,10 @@ const appUser = createSlice({
       if (!state.appUser) return;
       state.appUser.avatarURL = avatarURL;
     },
+    setLogOutReason(state, { payload: reason }: PayloadAction<LogOutReason | null>) {
+      state.logOutReason = reason;
+    }
   },
-
   extraReducers(builder) {
     builder.addCase("resetState", () => initialState);
   },
@@ -71,6 +80,7 @@ export const selectAppUser = (state: RootState) => state.appUser.appUser;
 export const selectHasLoggedIn = (state: RootState) =>
   selectLogInToken(state) !== null &&
   selectAppUser(state) !== null;
+export const selectLogOutReason = (state: RootState) => state.appUser.logOutReason;
 
 export const AppUserThunks = {
   initStore: createAsyncThunk("/appUser/initStore", async (_, { dispatch }) => {
@@ -121,15 +131,17 @@ export const AppUserThunks = {
         sessionStorage.setItem(LOGIN_TOKEN_KEY, logInToken);
       }
 
+      dispatch(appUser.actions.setLogOutReason(null));
       await dispatch(initAppStore());
     },
   ),
 
-  logOut: createAsyncThunk("/appUser/logOut", (_, { dispatch }) => {
+  logOut: createAsyncThunk("/appUser/logOut", (reason: LogOutReason | null, { dispatch }) => {
     localStorage.removeItem(LOGIN_TOKEN_KEY);
     sessionStorage.removeItem(LOGIN_TOKEN_KEY);
     closeSocket();
     dispatch(resetState());
+    dispatch(appUser.actions.setLogOutReason(reason));
   }),
 
   fetchAppUser: createAsyncThunk(

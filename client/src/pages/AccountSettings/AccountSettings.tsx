@@ -96,7 +96,7 @@ export function Account() {
               </ListItemButton>
               <ListItemButton
                 onClick={() => {
-                  dispatch(AppUserThunks.logOut());
+                  dispatch(AppUserThunks.logOut(null));
                 }}
               >
                 <ListItemIcon>
@@ -164,7 +164,10 @@ export function Account() {
         },
         data: { password: newPassword }
       });
-      dispatch(AppUserThunks.logOut());
+      dispatch(AppUserThunks.logOut({
+        type: "password has changed",
+        userID: appUser!.id
+      }));
     } catch {
       dispatch(
         AppAlertActions.show({
