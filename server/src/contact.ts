@@ -166,7 +166,7 @@ export function initContact(route: Router) {
 
       emitEvent("notifications/updated", requesterID);
       emitEvent("notifications/updated", recipientID);
-      
+
       ctx.throw(400, "Already in the contact list");
     }
 
@@ -198,6 +198,30 @@ export function initContact(route: Router) {
     emitEvent("notifications/updated", recipientID);
     emitEvent("contacts/updated", requesterID);
     emitEvent("contacts/updated", recipientID);
+
+    ctx.body = null;
+  });
+
+  route.post("/api/deleteContact", httpAuth, async (ctx) => {
+    const deleterID = ctx.request.jwt.payload.sub; // the ID of user who deletes the contact.
+    const deleteeID = ctx.request.body.userID; // The ID of user who is deleted from the contact list.
+    if (typeof deleteeID !== "string") {
+      ctx.throw(400, "Invalid argument");
+    }
+
+    const [userID, contactUserID] = minmax(deleterID, deleteeID);
+
+    const pool = getPool();
+
+    await pool.query(
+      "DELETE FROM chatapp.contacts WHERE user_id = $1 AND contact_user_id = $2",
+      [userID, contactUserID]
+    );
+
+    const eventData = { deleterID, deleteeID };
+
+    emitEvent("contacts/deleted", userID, eventData);
+    emitEvent("contacts/deleted", contactUserID, eventData);
 
     ctx.body = null;
   });

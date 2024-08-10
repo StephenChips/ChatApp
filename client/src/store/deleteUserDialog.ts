@@ -6,11 +6,7 @@ type DeleteUserConfirmDialogState =
       status: "hidden";
     }
   | {
-      status: "confirming";
-      user: User;
-    }
-  | {
-      status: "succeeded";
+      status: "visible";
       user: User;
     };
 
@@ -22,15 +18,9 @@ const slice = createSlice({
   name: "popovers",
   initialState: initialState as DeleteUserConfirmDialogState,
   reducers: {
-    confirming(_state, { payload: user }: PayloadAction<User>) {
+    show(_state, { payload: user }: PayloadAction<User>) {
       return {
-        status: "confirming",
-        user,
-      };
-    },
-    succeeded(_state, { payload: user }: PayloadAction<User>) {
-      return {
-        status: "succeeded",
+        status: "visible",
         user,
       };
     },

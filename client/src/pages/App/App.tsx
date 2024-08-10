@@ -33,9 +33,11 @@ import {
   selectNumberOfUnreadNotifications,
 } from "../../store/notifications";
 import { DeleteUserDialogActions } from "../../store/deleteUserDialog";
-import { AppAlert } from "./components/AppAlert/AppAlert";
+import { AppAlert } from "../../components/AppAlert";
 import { NavigateEffect } from "../../components/NavigateEffect";
-import { selectHasLoggedIn } from "../../store/appUser";
+import { selectHasLoggedIn, selectLogInToken } from "../../store/appUser";
+import axios from "axios";
+import { AppAlertActions } from "../../store/appAlert";
 
 export type MainPageContext = {
   currentContact?: Contact;
@@ -198,6 +200,7 @@ export function App() {
 }
 
 function DeleteUserConfirmDialog() {
+  const logInToken = useAppSelector((state) => selectLogInToken(state));
   const dispatch = useAppDispatch();
   const dialog = useAppSelector((state) => state.deleteUserDialog);
   const TRANSITION_MS = "300ms";
@@ -209,7 +212,7 @@ function DeleteUserConfirmDialog() {
   let dialogActions;
   let informingText;
 
-  if (dialog.status === "confirming") {
+  if (dialog.status === "visible") {
     dialogActions = (
       <>
         <Button color="warning" onClick={() => confirm(dialog.user)}>
@@ -218,11 +221,9 @@ function DeleteUserConfirmDialog() {
         <Button onClick={closeDialog}>Cancel</Button>
       </>
     );
-  } else if (dialog.status === "succeeded") {
-    dialogActions = <Button onClick={closeDialog}>Close</Button>;
   }
 
-  if (dialog.status === "confirming") {
+  if (dialog.status === "visible") {
     informingText = (
       <>
         <Typography>
@@ -231,20 +232,6 @@ function DeleteUserConfirmDialog() {
             This will delete all messages and is irreversible.
           </span>
         </Typography>
-      </>
-    );
-  } else if (dialog.status === "succeeded") {
-    informingText = (
-      <>
-        <Box display="flex" alignItems="center">
-          <Check
-            sx={{
-              marginRight: 1,
-              color: "green",
-            }}
-          />
-          This user has been deleted from your contact.
-        </Box>
       </>
     );
   }
@@ -285,17 +272,6 @@ function DeleteUserConfirmDialog() {
             <Box fontSize="16px" marginLeft={1}>
               #{dialog.user.id}
             </Box>
-            <Box
-              marginLeft="auto"
-              fontWeight="bold"
-              color="success.main"
-              sx={{
-                opacity: dialog.status === "succeeded" ? "1" : "0",
-                transition: `opacity ${TRANSITION_MS}`,
-              }}
-            >
-              DELETED
-            </Box>
           </Box>
           {informingText}
         </DialogContent>
@@ -304,12 +280,25 @@ function DeleteUserConfirmDialog() {
     </>
   );
 
-  function confirm(user: User) {
-    // Adds async action here, and pop up alert to inform users
-    // that the action is suceeeded or failed.
+  async function confirm(user: User) {
+    await axios("/api/deleteContact", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + logInToken,
+      },
+      data: {
+        userID: user.id,
+      },
+    }).catch((error) => {
+      dispatch(
+        AppAlertActions.show({
+          severity: "error",
+          alertText: error.message,
+        }),
+      );
+    });
 
-    dispatch(deleteContact(user.id));
-    dispatch(DeleteUserDialogActions.succeeded(user));
+    dispatch(DeleteUserDialogActions.hide());
   }
 
   function closeDialog() {

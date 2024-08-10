@@ -115,7 +115,6 @@ export function setMessageStatus(
     const chatMessageStore = transaction.objectStore(ObjectStore.ChatMessage);
     const message = await chatMessageStore.get(id);
     const newMessage = { ...message, status };
-    console.log(newMessage);
     await chatMessageStore.put(newMessage);
     dispatch(
       contactsSlice.actions.setMessageStatus({
@@ -175,7 +174,6 @@ export function initContactsStore(): ThunkAction<
     const transaction = database.transaction(ObjectStore.ChatMessage);
     const chatMessageStore = transaction.objectStore(ObjectStore.ChatMessage);
     for (const contactUser of contactUsers) {
-      console.log([loggedInUser.id, contactUser.id])
       const messages = await chatMessageStore
         .index("appUserID, contactUserID")
         .getAll([loggedInUser.id, contactUser.id]);

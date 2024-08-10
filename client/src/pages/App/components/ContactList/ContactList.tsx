@@ -221,7 +221,7 @@ function ContactListItem({ contact }: { contact: Contact }) {
 
   function deleteContact() {
     closeContextMenu();
-    dispatch(DeleteUserDialogActions.confirming(contact.user));
+    dispatch(DeleteUserDialogActions.show(contact.user));
   }
 }
 

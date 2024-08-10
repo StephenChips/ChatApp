@@ -1,6 +1,6 @@
 import { Alert } from "@mui/material";
-import { selectAppAlert, AppAlertActions } from "../../../../store/appAlert";
-import { useAppDispatch, useAppSelector } from "../../../../store";
+import { selectAppAlert, AppAlertActions } from "../store/appAlert";
+import { useAppDispatch, useAppSelector } from "../store";
 import React from "react";
 
 export function AppAlert({ style = {} }: { style?: React.CSSProperties }) {
