@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { omit } from "lodash";
 import cls from "./MessageWindow.module.css";
 import CircularProgress from "@mui/material/CircularProgress";
-import DoneIcon from "@mui/icons-material/Done";
 import ErrorIcon from "@mui/icons-material/Error";
 import { useAppDispatch, useAppSelector, useAppStore } from "../../../../store";
 import { selectAppUser } from "../../../../store/appUser";
@@ -64,12 +63,7 @@ function Row({ message, className }: RowProps) {
   if (message.senderID === appUser!.id) {
     switch (message.status) {
       case "succeeded":
-        messageStatus = (
-          <DoneIcon
-            style={{ color: "#007ba8", marginRight: 2 }}
-            fontSize="small"
-          />
-        );
+        messageStatus = null;
         break;
       case "sending":
         messageStatus = (
