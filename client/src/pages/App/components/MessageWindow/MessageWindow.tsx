@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { omit } from "lodash";
+import omit from "lodash/omit";
 import cls from "./MessageWindow.module.css";
 import CircularProgress from "@mui/material/CircularProgress";
 import ErrorIcon from "@mui/icons-material/Error";

@@ -7,7 +7,7 @@ import { ListItemIcon, Menu, MenuItem } from "@mui/material";
 import { Delete } from "@mui/icons-material";
 import React from "react";
 import { DeleteUserDialogActions } from "../../../../store/deleteUserDialog";
-import { last } from "lodash";
+import last from "lodash/last";
 
 export interface ContactListProps {
   contacts: Contact[];
