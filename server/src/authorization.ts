@@ -126,7 +126,7 @@ export async function httpAuth(ctx: Koa.Context, next: Koa.Next) {
 }
 
 type UserID = string;
-const onlineUserSockets = new Map<UserID, SocketIO.Socket>();
+const onlineUserSockets = new Map<UserID, SocketIO.Socket[]>();
 
 export function isUserOffline(userID: UserID) {
   return onlineUserSockets.get(userID) === undefined;
@@ -140,20 +140,29 @@ export function emitSocketIOEvent({
   event,
   toUser,
   data,
+  excludedSocket,
 }: {
   event: string | string[];
   toUser: UserID | UserID[];
   data?: any;
+  excludedSocket?: SocketIO.Socket | SocketIO.Socket[];
 }) {
   const eventList = Array.isArray(event) ? event : [event];
   const toUserList = Array.isArray(toUser) ? toUser : [toUser];
 
   for (const e of eventList) {
     for (const u of toUserList) {
-      const socket = onlineUserSockets.get(u);
-      if (!socket) continue;
-      if (data) socket.emit(e, data);
-      else socket.emit(e);
+      const socketList = onlineUserSockets.get(u);
+      console.log(u, socketList.length);
+      if (!socketList) continue;
+      for (const socket of socketList) {
+        console.log(excludedSocket === socket)
+        if (excludedSocket === socket) continue;
+        if (Array.isArray(excludedSocket) && excludedSocket.includes(socket))
+          continue;
+        if (data) socket.emit(e, data);
+        else socket.emit(e);
+      }
     }
   }
 }
@@ -174,12 +183,12 @@ export async function socketIOAuth(
     return;
   }
 
-  if (onlineUserSockets.has(userID)) {
-    next(new Error("User has logged in"));
-    return;
+  const socketList = onlineUserSockets.get(userID);
+  if (socketList) {
+    socketList.push(socket);
+  } else {
+    onlineUserSockets.set(userID, [socket]);
   }
-
-  onlineUserSockets.set(userID, socket);
 
   console.log(`User (ID: ${userID}) connected`);
 

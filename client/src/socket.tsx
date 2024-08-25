@@ -48,10 +48,7 @@ export function initSocket({
   socket.on("contacts/deleted", ({ deleterID, deleteeID }) => {
     const appUser = selectAppUser(getState());
     if (appUser!.id === deleterID) {
-      const contact = selectContactByUserID(
-        getState(),
-        deleteeID,
-      );
+      const contact = selectContactByUserID(getState(), deleteeID);
       const deletedUser = contact.user;
       dispatch(deleteContact(deletedUser.id));
       dispatch(
@@ -76,12 +73,22 @@ export function initSocket({
   });
 
   socket.on("im/message", async (msg) => {
+    const appUser = selectAppUser(getState());
     const message = {
       status: "succeeded",
       ...msg,
     };
 
-    await dispatch(addMessage(message.senderID, message));
+    if (message.senderID === appUser!.id) {
+      // If the message's sender's ID equals current app user's ID,
+      // it means the message is sent from the app user to a target
+      // user, whose ID is `message.recipientID`.
+      await dispatch(addMessage(message.recipientID, message));
+    } else {
+      // Otherwise the message is sent backward (a target user to
+      // the current app user)
+      await dispatch(addMessage(message.senderID, message));
+    }
   });
 
   return socket;

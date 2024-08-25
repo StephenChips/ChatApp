@@ -22,6 +22,7 @@ enum SocketIOEvents {
 export function initIMSystem(io: SocketIO.Server, router: Router) {
   io.on("connection", async (socket) => {
     socket.on(SocketIOEvents.Message, async (incomingMessage, callback) => {
+      const senderID = socket.jwt.payload.sub;
       incomingMessage.senderID = socket.jwt.payload.sub;
       const sentAt = new Date();
       const recipientID = incomingMessage.recipientID;
@@ -30,8 +31,9 @@ export function initIMSystem(io: SocketIO.Server, router: Router) {
 
       emitSocketIOEvent({
         event: SocketIOEvents.Message,
-        toUser: recipientID,
-        data: outgoingMessage
+        toUser: [senderID, recipientID],
+        data: outgoingMessage,
+        excludedSocket: socket
       });
 
       callback(null, outgoingMessage);
