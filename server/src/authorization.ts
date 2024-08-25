@@ -125,18 +125,36 @@ export async function httpAuth(ctx: Koa.Context, next: Koa.Next) {
   }
 }
 
-export type UserID = string;
-export const onlineUserSockets = new Map<UserID, SocketIO.Socket>();
+type UserID = string;
+const onlineUserSockets = new Map<UserID, SocketIO.Socket>();
 
-export function emitEvent(event: string, userID: string | number, data?: any) {
-  if (typeof userID === "number") {
-    userID = String(userID);
-  }
+export function isUserOffline(userID: UserID) {
+  return onlineUserSockets.get(userID) === undefined;
+}
 
-  const recipientSocket = onlineUserSockets.get(userID);
-  if (recipientSocket) {
-    if (data) recipientSocket.emit(event, data);
-    else recipientSocket.emit(event);
+export function isUserOnline(userID: UserID) {
+  return !isUserOffline(userID);
+}
+
+export function emitSocketIOEvent({
+  event,
+  toUser,
+  data,
+}: {
+  event: string | string[];
+  toUser: UserID | UserID[];
+  data?: any;
+}) {
+  const eventList = Array.isArray(event) ? event : [event];
+  const toUserList = Array.isArray(toUser) ? toUser : [toUser];
+
+  for (const e of eventList) {
+    for (const u of toUserList) {
+      const socket = onlineUserSockets.get(u);
+      if (!socket) continue;
+      if (data) socket.emit(e, data);
+      else socket.emit(e);
+    }
   }
 }
 

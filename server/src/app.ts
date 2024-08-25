@@ -50,7 +50,7 @@ export async function startApp(env: AppEnv) {
     }
   }));
 
-  initIMSystem(io);
+  initIMSystem(io, router);
   initAuthorization(router);
   initUser(router);
   initDefaultAvatars(router);

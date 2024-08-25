@@ -33,9 +33,11 @@ CREATE TABLE IF NOT EXISTS chatapp.contacts (
     CONSTRAINT pk_contacts PRIMARY KEY (user_id, contact_user_id)
 );
 
-CREATE TABLE IF NOT EXISTS chatapp.offline_messages (
-    id SERIAL,
-    user_id INT REFERENCES chatapp.users(id),
+CREATE TABLE IF NOT EXISTS chatapp.contact_messages (
+    id SERIAL PRIMARY KEY,
     sent_at TIMESTAMP,
-    message TEXT
+    recipient_id INT,
+    sender_id INT,
+    message_type TEXT,
+    content JSON
 );

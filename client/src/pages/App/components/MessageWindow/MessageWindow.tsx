@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import omit from "lodash/omit";
 import cls from "./MessageWindow.module.css";
 import CircularProgress from "@mui/material/CircularProgress";
 import ErrorIcon from "@mui/icons-material/Error";
@@ -11,7 +10,6 @@ import CloseIcon from "@mui/icons-material/Close";
 import {
   selectContactByUserID,
   addMessage,
-  setMessageStatus,
 } from "../../../../store/contacts";
 import { useNavigate, useParams } from "react-router";
 import { getSocket } from "../../../../socket";
@@ -141,7 +139,11 @@ export function MessageWindow() {
       <div className={cls["message-list"]}>{messageRows}</div>
       <form className={cls["message-inputbox"]} onSubmit={handleSendingText}>
         <input type="text" value={textInput} onChange={handleInputtingText} />
-        <button type="submit" className={cls["sending-button"]} disabled={textInput === ""}>
+        <button
+          type="submit"
+          className={cls["sending-button"]}
+          disabled={textInput === ""}
+        >
           SEND
         </button>
       </form>
@@ -155,35 +157,39 @@ export function MessageWindow() {
   async function handleSendingText(e: React.FormEvent) {
     e.preventDefault();
 
-    let status: Message["status"];
-
-    const msg: Omit<TextMessage, "id"> = {
+    const msg = {
       type: "text",
       text: textInput,
       senderID: appUser!.id,
       recipientID: currentContactID,
-      sentAt: new Date().toISOString(),
-      status: "sending",
     };
 
-    const id = await dispatch(addMessage(msg.recipientID, msg));
+    const message = await sendMessageToServer(msg)
+      .then((msg) => ({ ...msg, status: "succeeded" }))
+      .catch((e) => {
+        console.log(e)
+        return { ...msg, status: "failed" }
+      });
 
-    try {
-      await sendMessageToServer({ ...msg, id });
-      status = "succeeded";
-    } catch {
-      status = "failed";
-    }
-    
-    await dispatch(setMessageStatus(id, status));
+    console.log(message);
+
+    await dispatch(addMessage(msg.recipientID, message));
 
     setTextInput("");
   }
 
-  async function sendMessageToServer<T extends Message>(message: T) {
+  async function sendMessageToServer(message: unknown) {
     const io = getSocket()!;
-    const msg = omit(message, "id", "status");
-    await io.emitWithAck("im/message", msg);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return new Promise<any>((resolve, reject) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      io.emit("im/message", message, (error: any, sentMessage: any) => {
+        console.log(sentMessage)
+        if (error) reject(error);
+        else resolve(sentMessage);
+      });
+    });
   }
 
   function onCloseMessageWindow() {

@@ -1,5 +1,5 @@
 import Router = require("koa-router");
-import { emitEvent, httpAuth } from "./authorization";
+import { emitSocketIOEvent, httpAuth } from "./authorization";
 import { requestBodyContentType } from "./utils";
 import { getPool, transaction } from "./database";
 import {
@@ -129,8 +129,10 @@ export function initContact(route: Router) {
         });
       });
 
-      emitEvent("notifications/updated", requesterID);
-      emitEvent("notifications/updated", recipientID);
+      emitSocketIOEvent({
+        event: "notifications/updated",
+        toUser: [requesterID, recipientID],
+      });
 
       ctx.body = null;
     }
@@ -156,7 +158,7 @@ export function initContact(route: Router) {
       ctx.throw("No such add contact request");
     }
 
-    const requesterID = result.rows[0].requester_id;
+    const requesterID = String(result.rows[0].requester_id);
 
     if (await alreadyInTheContactList(pool, requesterID, recipientID)) {
       await pool.query(
@@ -164,8 +166,10 @@ export function initContact(route: Router) {
         ["expired", addContactRequestID]
       );
 
-      emitEvent("notifications/updated", requesterID);
-      emitEvent("notifications/updated", recipientID);
+      emitSocketIOEvent({
+        event: "notifications/updated",
+        toUser: [requesterID, recipientID],
+      });
 
       ctx.throw(400, "Already in the contact list");
     }
@@ -194,10 +198,11 @@ export function initContact(route: Router) {
       );
     });
 
-    emitEvent("notifications/updated", requesterID);
-    emitEvent("notifications/updated", recipientID);
-    emitEvent("contacts/updated", requesterID);
-    emitEvent("contacts/updated", recipientID);
+
+    emitSocketIOEvent({
+      event: ["notifications/updated", "contacts/updated"],
+      toUser: [requesterID, recipientID],
+    });
 
     ctx.body = null;
   });
@@ -218,10 +223,11 @@ export function initContact(route: Router) {
       [userID, contactUserID]
     );
 
-    const eventData = { deleterID, deleteeID };
-
-    emitEvent("contacts/deleted", userID, eventData);
-    emitEvent("contacts/deleted", contactUserID, eventData);
+    emitSocketIOEvent({
+      event: "contacts/deleted",
+      toUser: [userID, contactUserID],
+      data: { deleterID, deleteeID }
+    });
 
     ctx.body = null;
   });

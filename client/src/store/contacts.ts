@@ -8,8 +8,7 @@ import {
 import { RootState } from ".";
 import { Contact, Message, User } from "./modeltypes";
 import axios from "axios";
-import { selectAppUser, selectLogInToken } from "./appUser";
-import { ObjectStore, openIndexedDB } from "../indexedDB";
+import { selectLogInToken } from "./appUser";
 
 function stringCompare(a: string, b: string) {
   if (a < b) return -1;
@@ -45,22 +44,6 @@ const contactsSlice = createSlice({
       const contact = state.entities[contactUserID];
       contact?.messages.push(message);
     },
-
-    setMessageStatus(
-      state,
-      actions: PayloadAction<{
-        contactUserID: User["id"];
-        messageID: Message["id"];
-        status: Message["status"];
-      }>,
-    ) {
-      const { contactUserID, messageID, status } = actions.payload;
-      const contact = state.entities[contactUserID];
-      const message = contact?.messages.find((msg) => msg.id === messageID);
-      if (message) {
-        message.status = status;
-      }
-    },
   },
 
   extraReducers(builder) {
@@ -73,54 +56,13 @@ export const { deleteContact, addContact, upsertManyContacts } =
 
 export function addMessage(
   contactUserID: string,
-  messageWithoutID: Omit<Message, "id">,
-): ThunkAction<Promise<number>, RootState, unknown, UnknownAction> {
-  return async function (dispatch, getState) {
-    const appUser = selectAppUser(getState())!;
-    const database = await openIndexedDB();
-    const transaction = database.transaction(
-      ObjectStore.ChatMessage,
-      "readwrite",
-    );
-    
-    const chatMessageStore = transaction.objectStore(ObjectStore.ChatMessage);
-    
-    const id = (await chatMessageStore.add({
-      ...messageWithoutID,
-      appUserID: appUser!.id,
-      contactUserID,
-    })) as number;
-
+  message: Message,
+): ThunkAction<Promise<void>, RootState, unknown, UnknownAction> {
+  return async function (dispatch) {
     dispatch(
       contactsSlice.actions.addMessage({
         contactUserID,
-        message: { id, ...messageWithoutID } as Message,
-      }),
-    );
-
-    return id;
-  };
-}
-
-export function setMessageStatus(
-  id: number,
-  status: Message["status"],
-): ThunkAction<Promise<void>, RootState, unknown, UnknownAction> {
-  return async function (dispatch) {
-    const database = await openIndexedDB();
-    const transaction = database.transaction(
-      ObjectStore.ChatMessage,
-      "readwrite",
-    );
-    const chatMessageStore = transaction.objectStore(ObjectStore.ChatMessage);
-    const message = await chatMessageStore.get(id);
-    const newMessage = { ...message, status };
-    await chatMessageStore.put(newMessage);
-    dispatch(
-      contactsSlice.actions.setMessageStatus({
-        contactUserID: newMessage.recipientID,
-        messageID: newMessage.id,
-        status,
+        message,
       }),
     );
   };
@@ -158,8 +100,9 @@ export function initContactsStore(): ThunkAction<
 > {
   return async function (dispatch, getState) {
     const logInToken = selectLogInToken(getState())!;
-    const loggedInUser = selectAppUser(getState())!;
+
     if (logInToken === null) return;
+    
     const { data: contactUsers } = await axios("/api/getContacts", {
       method: "POST",
       headers: {
@@ -167,22 +110,29 @@ export function initContactsStore(): ThunkAction<
       },
     });
 
-    const contacts: Contact[] = [];
+    const contactPromises = [];
 
-    const database = await openIndexedDB();
-
-    const transaction = database.transaction(ObjectStore.ChatMessage);
-    const chatMessageStore = transaction.objectStore(ObjectStore.ChatMessage);
     for (const contactUser of contactUsers) {
-      const messages = await chatMessageStore
-        .index("appUserID, contactUserID")
-        .getAll([loggedInUser.id, contactUser.id]);
-      contacts.push({
-        user: contactUser,
-        messages,
+      const promise = axios({
+        method: "POST",
+        url: "/api/getContactMessages",
+        headers: {
+          Authorization: `Bearer ${logInToken}`,
+        },
+        data: {
+          contactUserID: contactUser.id,
+        },
+      }).then((response) => {
+        return {
+          user: contactUser,
+          messages: response.data.messages,
+        }
       });
+
+      contactPromises.push(promise);
     }
 
+    const contacts = await Promise.all(contactPromises);
     dispatch(upsertManyContacts(contacts));
   };
 }

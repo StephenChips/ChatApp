@@ -52,7 +52,6 @@ export function initSocket({
         getState(),
         deleteeID,
       );
-      console.log(contact)
       const deletedUser = contact.user;
       dispatch(deleteContact(deletedUser.id));
       dispatch(
