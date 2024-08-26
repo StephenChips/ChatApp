@@ -137,7 +137,7 @@ function ContactListItem({ contact }: { contact: Contact }) {
     if (latestChat.type === "image") {
       latestChatText = "[image]";
     } else {
-      latestChatText = latestChat.text.slice(0, 30);
+      latestChatText = latestChat.text;
     }
 
     const date = new Date(latestChat.sentAt);

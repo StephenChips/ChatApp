@@ -167,11 +167,9 @@ export function MessageWindow() {
     const message = await sendMessageToServer(msg)
       .then((msg) => ({ ...msg, status: "succeeded" }))
       .catch((e) => {
-        console.log(e)
+        console.error(e)
         return { ...msg, status: "failed" }
       });
-
-    console.log(message);
 
     await dispatch(addMessage(msg.recipientID, message));
 
@@ -185,7 +183,6 @@ export function MessageWindow() {
     return new Promise<any>((resolve, reject) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       io.emit("im/message", message, (error: any, sentMessage: any) => {
-        console.log(sentMessage)
         if (error) reject(error);
         else resolve(sentMessage);
       });

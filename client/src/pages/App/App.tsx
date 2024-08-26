@@ -6,7 +6,6 @@ import {
   selectAllContacts,
   selectContactByUserID,
   hasContact,
-  deleteContact,
 } from "../../store/contacts";
 import { Contact, User } from "../../store/modeltypes";
 import { AddContactDialog } from "./components/AddContactDialog/AddContactDialog";
@@ -25,7 +24,6 @@ import {
   PersonAdd,
   AccountCircle,
   Notifications,
-  Check,
 } from "@mui/icons-material";
 import { Outlet, useLocation, useNavigate, type Location } from "react-router";
 import {
@@ -203,7 +201,6 @@ function DeleteUserConfirmDialog() {
   const logInToken = useAppSelector((state) => selectLogInToken(state));
   const dispatch = useAppDispatch();
   const dialog = useAppSelector((state) => state.deleteUserDialog);
-  const TRANSITION_MS = "300ms";
 
   if (dialog.status === "hidden") {
     return <Dialog open={false}></Dialog>;

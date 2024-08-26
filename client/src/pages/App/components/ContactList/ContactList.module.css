@@ -38,9 +38,6 @@
   grid-template-areas:
     "userName   latestChatTime"
     "latestChat latestChat";
-  grid-template-columns: "3fr 1fr";
-  grid-template-rows: "1fr 2fr";
-
   flex: 1;
 }
 
@@ -63,6 +60,7 @@
   grid-area: latestChat;
   text-wrap: nowrap;
   text-overflow: ellipsis;
+  overflow: hidden;
   color: #767676;
   font-size: 14px;
 }

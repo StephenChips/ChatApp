@@ -153,10 +153,8 @@ export function emitSocketIOEvent({
   for (const e of eventList) {
     for (const u of toUserList) {
       const socketList = onlineUserSockets.get(u);
-      console.log(u, socketList.length);
       if (!socketList) continue;
       for (const socket of socketList) {
-        console.log(excludedSocket === socket)
         if (excludedSocket === socket) continue;
         if (Array.isArray(excludedSocket) && excludedSocket.includes(socket))
           continue;
