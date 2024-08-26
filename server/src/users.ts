@@ -96,13 +96,13 @@ export function initUser(router: Router) {
         ctx.throw(400, new Error("The image uploaded is too large, the maximum size is " + MAX_FILESIZE_KB + " KB."));
       }
 
-      const storePath = join(__dirname, `../public/user/${id}/user-avatar`);
+      const storePath = join(__dirname, `../public/users/${id}/user-avatar`);
 
       await mkdir(dirname(storePath), { recursive: true });
       await copyFile(imageFile.filepath, storePath);
       await unlink(imageFile.filepath);
       
-      url = `/public/user/${id}/user-avatar`;
+      url = `/public/users/${id}/user-avatar`;
     }
 
     await pool.query("UPDATE chatapp.users SET avatar_url = $1 WHERE id = $2", [url, id]);
