@@ -57,7 +57,7 @@ export async function startApp(env: AppEnv) {
   initContact(router);
   initNotifications(router);
 
-  app.use(mount("/public", serve(resolve(__dirname, "../public"))));
+  app.use(mount("/", serve(resolve(__dirname, "../public"))));
   app.use(router.routes());
   app.use(router.allowedMethods());
 
