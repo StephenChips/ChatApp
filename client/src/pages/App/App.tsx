@@ -20,11 +20,7 @@ import {
   IconButton,
   Typography,
 } from "@mui/material";
-import {
-  PersonAdd,
-  AccountCircle,
-  Notifications,
-} from "@mui/icons-material";
+import { PersonAdd, AccountCircle, Notifications } from "@mui/icons-material";
 import { Outlet, useLocation, useNavigate, type Location } from "react-router";
 import {
   NotificationThunks,
@@ -127,7 +123,7 @@ export function App() {
 
   return (
     <MainPageContext.Provider value={context}>
-      <AppAlert style={{ width: "100%" }} />
+      <AppAlert style={{ width: "100%", flex: 0 }} />
       <div className={cls["app"]}>
         <div className={cls["sidebar"]}>
           <Box display="flex" justifyContent="end" m={2} mb={1}>
