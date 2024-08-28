@@ -4,7 +4,10 @@
   display: flex;
   flex-direction: column;
 
-  --message-list-width: 95%;
+  container-type: inline-size;
+  container-name: message-window;
+
+  --message-list-width: 70%;
 }
 
 .message-window-header {
@@ -36,15 +39,18 @@
   margin-left: auto;
 }
 
-.message-list {
+.message-list-wrapper {
   flex: 1;
+  overflow: auto;
+  scrollbar-gutter: stable both-edges;
+}
+
+.message-list {
   width: var(--message-list-width);
   margin: 0 auto;
-  overflow: auto;
 }
 
 .message-inputbox {
-  width: 100%;
   height: 60px;
 
   background: white;
@@ -83,6 +89,17 @@
   padding: 15px;
   flex: 1;
   font-size: 18px;
+  width: 0; /* Overwrite browsers' default width of <input /> elements. */
+}
+
+@container message-window (max-width: 970px) {
+  .message-window-header-content,
+  .message-list,
+  .message-inputbox {
+    width: auto;
+    margin-left: 147px;
+    margin-right: 147px;
+  }
 }
 
 .row {
