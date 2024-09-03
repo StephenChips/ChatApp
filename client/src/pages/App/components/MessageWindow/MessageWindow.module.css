@@ -6,8 +6,9 @@
 
   container-type: inline-size;
   container-name: message-window;
-
+  position: relative;
   --message-list-width: 70%;
+  --horizontal-margin: 147px;
 }
 
 .message-window-header {
@@ -48,6 +49,7 @@
 .message-list {
   width: var(--message-list-width);
   margin: 0 auto;
+  position: relative;
 }
 
 .message-inputbox {
@@ -89,7 +91,15 @@
   padding: 15px;
   flex: 1;
   font-size: 18px;
-  width: 0; /* Overwrite browsers' default width of <input /> elements. */
+  width: 0;
+  /* Overwrite browsers' default width of <input /> elements. */
+}
+
+.scroll-to-bottom-fab {
+  --distance-to-right-border: 80px;
+  position: absolute;
+  right: calc((100% - var(--message-list-width)) / 2 - var(--distance-to-right-border));
+  bottom: 80px;
 }
 
 @container message-window (max-width: 970px) {
@@ -97,8 +107,12 @@
   .message-list,
   .message-inputbox {
     width: auto;
-    margin-left: 147px;
-    margin-right: 147px;
+    margin-left: var(--horizontal-margin);
+    margin-right: var(--horizontal-margin);
+  }
+
+  .scroll-to-bottom-fab {
+    right: calc(var(--horizontal-margin) - var(--distance-to-right-border));
   }
 }
 

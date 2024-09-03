@@ -44,66 +44,32 @@ export function initIMSystem(io: SocketIO.Server, router: Router) {
     const userID = ctx.request.jwt!.payload.sub;
     const {
       contactUserID,
-      latestMessageID,
       offset = 0,
       limit = 50,
     } = ctx.request.body;
 
     const pool = getPool();
 
-    let result: QueryResult<any>;
-
-    if (latestMessageID) {
-      result = await pool.query(
-        "SELECT id FROM chatapp.contact_messages WHERE id = $1",
-        [latestMessageID]
-      );
-
-      if (result.rowCount === 0) {
-        ctx.body = { messages: [] };
-        return;
-      }
-
-      const latestMessage = result.rows[0];
-
-      result = await pool.query(
-        `
-        SELECT
-          id,
-          sent_at,
-          sender_id,
-          recipient_id,
-          message_type,
-          content
-        FROM
-          chatapp.contact_messages
-        WHERE (
-          sender_id = $1 AND recipient_id = $2 OR
-          recipient_id = $1 AND sender_id = $2
-        ) AND sent_at <= $3
-        LIMIT $4 OFFSET $5
+    let result = await pool.query(
+      `
+      SELECT
+        id,
+        sent_at,
+        sender_id,
+        recipient_id,
+        message_type,
+        content
+      FROM chatapp.contact_messages
+      WHERE
+        sender_id = $1 AND recipient_id = $2 OR
+        recipient_id = $1 AND sender_id = $2
+      ORDER BY id DESC
+      LIMIT $3 OFFSET $4
       `,
-        [userID, contactUserID, latestMessage.sent_at, limit, offset]
-      );
-    } else {
-      result = await pool.query(
-        `
-        SELECT
-          id,
-          sent_at,
-          sender_id,
-          recipient_id,
-          message_type,
-          content
-        FROM chatapp.contact_messages
-        WHERE
-          sender_id = $1 AND recipient_id = $2 OR
-          recipient_id = $1 AND sender_id = $2
-        LIMIT $3 OFFSET $4
-        `,
-        [userID, contactUserID, limit, offset]
-      );
-    }
+      [userID, contactUserID, limit, offset]
+    );
+
+    result.rows.reverse();
 
     const messages = result.rows.map((row) => ({
       ...row.content,

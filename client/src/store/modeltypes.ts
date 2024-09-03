@@ -30,6 +30,7 @@ export type Message = TextMessage | ImageMessage;
 export type Contact = {
   user: User;
   messages: Message[];
+  noMoreMessages: boolean;
 };
 
 type CommonNotificationProps = {

@@ -42,8 +42,34 @@ const contactsSlice = createSlice({
       }: PayloadAction<{ contactUserID: string; message: Message }>,
     ) {
       const contact = state.entities[contactUserID];
-      contact?.messages.push(message);
+      contact?.messages?.push(message);
     },
+
+    prependMessages(
+      state,
+      {
+        payload: { contactUserID, messages },
+      }: PayloadAction<{ contactUserID: string; messages: Message[] }>,
+    ) {
+      const contact = state.entities[contactUserID];
+      if (contact.messages) {
+        contact.messages.unshift(...messages);
+      } else {
+        contact.messages = messages;
+      }
+
+      console.log(contact.messages)
+    },
+
+    setNoMoreMessages(
+      state,
+      {
+        payload: { contactUserID, value },
+      }: PayloadAction<{ contactUserID: string; value: boolean }>,
+    ) {
+      const contact = state.entities[contactUserID];
+      contact.noMoreMessages = value;
+    }
   },
 
   extraReducers(builder) {
@@ -51,8 +77,15 @@ const contactsSlice = createSlice({
   },
 });
 
-export const { deleteContact, addContact, upsertManyContacts } =
-  contactsSlice.actions;
+export const FETCH_LIMITS = 10;
+
+export const {
+  deleteContact,
+  addContact,
+  upsertManyContacts,
+  prependMessages,
+  setNoMoreMessages
+} = contactsSlice.actions;
 
 export function addMessage(
   contactUserID: string,
@@ -100,39 +133,69 @@ export function initContactsStore(): ThunkAction<
 > {
   return async function (dispatch, getState) {
     const logInToken = selectLogInToken(getState())!;
-
-    if (logInToken === null) return;
-    
     const { data: contactUsers } = await axios("/api/getContacts", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${logInToken}`,
       },
     });
-
-    const contactPromises = [];
-
-    for (const contactUser of contactUsers) {
-      const promise = axios({
-        method: "POST",
-        url: "/api/getContactMessages",
-        headers: {
-          Authorization: `Bearer ${logInToken}`,
-        },
-        data: {
-          contactUserID: contactUser.id,
-        },
-      }).then((response) => {
-        return {
-          user: contactUser,
-          messages: response.data.messages,
-        }
-      });
-
-      contactPromises.push(promise);
-    }
-
-    const contacts = await Promise.all(contactPromises);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const promises = (contactUsers as any[]).map((contactUser: any) =>
+      initContactStates(logInToken, contactUser),
+    );
+    const contacts = await Promise.all(promises);
     dispatch(upsertManyContacts(contacts));
   };
+}
+
+async function initContactStates(
+  logInToken: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  contactUser: any,
+): Promise<Contact> {
+  const limit = FETCH_LIMITS;
+
+  const messages = await fetchMessages({
+    logInToken,
+    contactUserID: contactUser.id,
+    offset: 0,
+    limit,
+  });
+
+  const noMoreMessages = messages.length < limit;
+
+  return {
+    user: contactUser,
+    messages,
+    noMoreMessages,
+  };
+}
+
+async function fetchMessages({
+  logInToken,
+  contactUserID,
+  offset,
+  limit,
+}: {
+  logInToken: string;
+  contactUserID: string;
+  offset: number;
+  limit: number;
+}) {
+  const {
+    data: { messages },
+  } = await axios({
+    url: "/api/getContactMessages",
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${logInToken}`,
+    },
+    data: {
+      contactUserID,
+      offset,
+      limit,
+    },
+  });
+
+  return messages;
 }
