@@ -40,18 +40,6 @@
   margin-left: auto;
 }
 
-.message-list-wrapper {
-  flex: 1;
-  overflow: auto;
-  scrollbar-gutter: stable both-edges;
-}
-
-.message-list {
-  width: var(--message-list-width);
-  margin: 0 auto;
-  position: relative;
-}
-
 .message-inputbox {
   height: 60px;
 
@@ -114,38 +102,6 @@
   .scroll-to-bottom-fab {
     right: calc(var(--horizontal-margin) - var(--distance-to-right-border));
   }
-}
-
-.row {
-  display: flex;
-  box-sizing: border-box;
-  margin-bottom: 5px;
-}
-
-.row.first {
-  margin-top: 5px;
-}
-
-.row.my-message :first-child {
-  margin-left: auto;
-}
-
-.text-bubble {
-  padding: 10px;
-  border-radius: 15px;
-  box-sizing: border-box;
-}
-
-.text-bubble.my-message {
-  background-color: #bde4f1;
-  border-bottom-right-radius: 0;
-  border: 2px solid #94bfce;
-}
-
-.text-bubble.their-message {
-  background-color: #f9f9f9;
-  border-bottom-left-radius: 0;
-  border: 2px solid #d2d2d2;
 }
 
 .empty-message-window-prompt {

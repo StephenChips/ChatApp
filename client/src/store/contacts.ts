@@ -45,20 +45,13 @@ const contactsSlice = createSlice({
       contact?.messages?.push(message);
     },
 
-    prependMessages(
+    setContactMessages(
       state,
       {
         payload: { contactUserID, messages },
       }: PayloadAction<{ contactUserID: string; messages: Message[] }>,
     ) {
-      const contact = state.entities[contactUserID];
-      if (contact.messages) {
-        contact.messages.unshift(...messages);
-      } else {
-        contact.messages = messages;
-      }
-
-      console.log(contact.messages)
+      state.entities[contactUserID].messages = messages;
     },
 
     setNoMoreMessages(
@@ -69,7 +62,7 @@ const contactsSlice = createSlice({
     ) {
       const contact = state.entities[contactUserID];
       contact.noMoreMessages = value;
-    }
+    },
   },
 
   extraReducers(builder) {
@@ -77,14 +70,14 @@ const contactsSlice = createSlice({
   },
 });
 
-export const FETCH_LIMITS = 10;
+export const FETCH_LIMITS = 15;
 
 export const {
   deleteContact,
   addContact,
   upsertManyContacts,
-  prependMessages,
-  setNoMoreMessages
+  setContactMessages,
+  setNoMoreMessages,
 } = contactsSlice.actions;
 
 export function addMessage(
@@ -106,6 +99,13 @@ export const {
   selectById: selectContactByUserID,
   selectIds: selectContactsUserIDs,
 } = contactsAdapter.getSelectors<RootState>((state) => state.contacts);
+
+export function selectContactChats(
+  state: RootState,
+  contactUserID: User["id"],
+) {
+  return selectContactByUserID(state, contactUserID)?.messages;
+}
 
 export function selectLastChat(state: RootState, contactUserID: User["id"]) {
   const contact = selectContactByUserID(state, contactUserID);
