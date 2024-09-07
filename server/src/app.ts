@@ -3,7 +3,6 @@ import * as http from "http";
 import * as Koa from "koa";
 import * as Router from "koa-router"
 import * as serve from "koa-static";
-import mount = require("koa-mount")
 import { koaBody } from "koa-body"
 import * as SocketIO from "socket.io";
 
@@ -16,6 +15,7 @@ import { initUser } from "./users";
 import initDefaultAvatars from "./default-avatars";
 import { initContact } from "./contact";
 import { initNotifications } from "./notification";
+import { createReadStream } from "fs";
 
 export type AppEnv = {
   jwtSecret: string,
@@ -57,9 +57,15 @@ export async function startApp(env: AppEnv) {
   initContact(router);
   initNotifications(router);
 
-  app.use(mount("/", serve(resolve(__dirname, "../public"))));
+  router.get(/^.*$/, async (ctx) => {
+    ctx.response.set("content-type", "text/html");
+    ctx.body = createReadStream(resolve(__dirname, "../public/index.html"));
+  });
+
+  app.use(serve(resolve(__dirname, "../public")));
   app.use(router.routes());
   app.use(router.allowedMethods());
+
 
   httpServer.listen(env.port, () => {
     console.log("The server is started at the port " + env.port);
