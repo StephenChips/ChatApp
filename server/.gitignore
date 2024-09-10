@@ -1,3 +1,4 @@
 node_modules/
 public/
 !public/default-avatars
+settings.json

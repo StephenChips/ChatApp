@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node ./src/main.ts",
+    "dev": "ts-node ./src/app.ts",
     "test": "jest"
   },
   "author": "",
@@ -25,6 +25,7 @@
     "typescript": "^5.5.3"
   },
   "dependencies": {
+    "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "koa": "^2.15.3",
     "koa-body": "^6.0.1",

@@ -58,7 +58,6 @@ export const MessageList = forwardRef<HTMLElement, MessageListProps>(function (
     if (!propsRef.current.noMoreMessages) {
       intersectionObserverRef.current = new IntersectionObserver(
         async (entries) => {
-          console.log(entries[0]);
           const wrapperEl = messageListElementRef.current!;
           const listHeadEl = messageListHeadElementRef.current!;
           const firstMessageEl = messageListElementRef.current!.querySelector(
