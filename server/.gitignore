@@ -1,5 +1,5 @@
 node_modules/
 public/
 !public/default-avatars
-settings.json
 settings.dev.json
+/secrets

@@ -1,0 +1,18 @@
+{
+  "jwtSecretFile": "/run/secrets/jwt-secret",
+  "postgreSQL": {
+    "user": "postgres",
+    "passwordFile": "/run/secrets/pgpass",
+    "host": "localhost",
+    "port": 5432,
+    "database": "postgres"
+  },
+  "http": {
+    "port": 80
+  },
+  "https": {
+    "port": 443,
+    "certPath": "/run/secrets/tls.cert",
+    "keyPath": "/run/secrets/tls.key"
+  }
+}

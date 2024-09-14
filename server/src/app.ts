@@ -10,7 +10,7 @@ import * as SocketIO from "socket.io";
 
 import { initDatabasePool, runSQLFile } from "./database";
 
-import { httpsEnabled, settings } from "./appSettings";
+import { httpsEnabled, initAppSettings } from "./appSettings";
 import { initIMSystem } from "./im-system";
 import { initAuthorization, socketIOAuth } from "./authorization";
 import { initUser } from "./users";
@@ -21,6 +21,8 @@ import { initNotifications } from "./notification";
 startApp();
 
 async function startApp() {
+  const settings = await initAppSettings();
+
   initDatabasePool(settings.postgreSQL);
 
   console.log("Creating database (if it hasn't been created yet)");

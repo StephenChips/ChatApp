@@ -1,0 +1,65 @@
+name: chatapp
+
+services:
+  chatapp-server:
+    build: .
+    restart: on-failure
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+    ports:
+      - "443:${HTTPS_PORT}/tcp"
+      - "80:${HTTP_PORT}/tcp"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PASSWORD_FILE: ${POSTGRES_PASSWORD_FILE}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      JWT_SECRET_FILE: ${JWT_SECRET_FILE}
+      TLS_CERT_FILE: ${TLS_CERT_FILE}
+      TLS_KEY_FILE: ${TLS_KEY_FILE}
+      HTTP_PORT: ${HTTP_PORT}
+      HTTPS_PORT: ${HTTPS_PORT}
+    volumes:
+      - userdata:/app/public/userdata
+    secrets:
+      - jwt-secret
+      - pgpass
+      - tls.cert
+      - tls.key
+
+  postgres:
+    image: postgres
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    restart: always
+    secrets:
+      - pgpass
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD_FILE: ${POSTGRES_PASSWORD_FILE}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -p ${POSTGRES_PORT} -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+  
+volumes:
+  userdata:
+  pgdata:
+
+secrets:
+  pgpass:
+    file: ./secrets/pgpass
+  tls.cert:
+    file: ./secrets/tls.cert
+  tls.key:
+    file: ./secrets/tls.key
+  jwt-secret:
+    file: ./secrets/jwt-secret

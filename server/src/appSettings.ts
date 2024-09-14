@@ -1,6 +1,7 @@
 import Joi = require("joi");
 import { readFileSync } from "node:fs";
-import { getSettingsFilePath } from "./cli-options";
+import { cliOptions } from "./cli-options";
+import path = require("node:path");
 
 interface AppSettings {
   readonly jwtSecret: string;
@@ -47,8 +48,27 @@ const settingsJSONSchema = Joi.object({
     .optional(),
 }).xor("jwtSecret", "jwtSecretFile");
 
-function initAppSettings(): AppSettings {
-  const settingsJSON = require(getSettingsFilePath());
+let appSettings : AppSettings;
+
+export function getSettingsFilePath() {
+  const ROOT_DIR = path.resolve(__dirname, "../");
+  const filepath = path.resolve(ROOT_DIR, cliOptions.settingsFile ?? "./settings.ts");
+  console.log(filepath)
+  return filepath;
+}
+
+export async function initAppSettings(): Promise<AppSettings> {
+  const settingsFilePath = getSettingsFilePath();
+  
+  let settingsJSON 
+  if (settingsFilePath.endsWith(".json")) {
+    settingsJSON = require(settingsFilePath)
+  } else if (/^.+\.(ts|js)$/.test(settingsFilePath)) {
+    settingsJSON = (await import(settingsFilePath)).default;
+  } else {
+    console.error("Wrong setting file's extension. A setting file should be a .json, a .js or a .ts file.");
+    process.exit(1);
+  }
 
   try {
     Joi.assert(
@@ -74,12 +94,16 @@ function initAppSettings(): AppSettings {
     );
     delete settingsJSON.postgreSQL.passwordFile;
   }
+  
+  appSettings = settingsJSON;
 
-  return settingsJSON;
+  return appSettings;
 }
 
-export const settings = initAppSettings();
+export function getAppSettings() {
+  return appSettings;
+}
 
 export function httpsEnabled() {
-  return settings.https !== undefined;
+  return appSettings!.https !== undefined;
 }

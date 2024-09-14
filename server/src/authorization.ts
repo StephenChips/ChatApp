@@ -7,7 +7,7 @@ import Koa = require("koa");
 import * as SocketIO from "socket.io";
 import { requestBodyContentType } from "./utils";
 import { QueryResult } from "pg";
-import { settings } from "./appSettings";
+import { getAppSettings } from "./appSettings";
 
 export type JWTPayload = {
   sub: string; // the userID
@@ -69,6 +69,7 @@ export function initAuthorization(router: Router) {
         }
 
         const jwt: string = await new Promise((resolve, reject) => {
+          const settings = getAppSettings();
           JWT.sign(
             { sub: userID },
             settings.jwtSecret,
@@ -116,6 +117,7 @@ export async function httpAuth(ctx: Koa.Context, next: Koa.Next) {
 
   try {
     const token = authHeader.slice(headerPrefix.length);
+    const settings = getAppSettings();
     const payload = await verifyJWT(token, settings.jwtSecret);
     ctx.request.jwt = { payload };
     return next();
@@ -171,6 +173,7 @@ export async function socketIOAuth(
 ) {
   let userID: string;
 
+  const settings = getAppSettings();
   try {
     socket.jwt = {
       payload: await verifyJWT(socket.handshake.auth.jwt, settings.jwtSecret),
