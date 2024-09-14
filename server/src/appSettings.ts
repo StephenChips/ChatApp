@@ -1,5 +1,6 @@
 import Joi = require("joi");
 import { readFileSync } from "node:fs";
+import { getSettingsFilePath } from "./cli-options";
 
 interface AppSettings {
   readonly jwtSecret: string;
@@ -47,7 +48,7 @@ const settingsJSONSchema = Joi.object({
 }).xor("jwtSecret", "jwtSecretFile");
 
 function initAppSettings(): AppSettings {
-  const settingsJSON = require("../settings.json");
+  const settingsJSON = require(getSettingsFilePath());
 
   try {
     Joi.assert(
