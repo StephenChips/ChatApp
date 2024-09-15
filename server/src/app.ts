@@ -49,18 +49,20 @@ async function startApp() {
   const io = new SocketIO.Server(httpsEnabled() ? httpsServer : httpServer);
   io.use(socketIOAuth);
 
-  app.use((ctx, next) => {
-    if (ctx.secure) return next();
-
-    const url = new URL(ctx.request.URL);
-    url.protocol = "https";
-    url.port = String(settings.https.port);
-
-    ctx.status = 301;
-    ctx.redirect(url.toString());
-
-    next();
-  });
+  if (httpsEnabled()) {
+    app.use((ctx, next) => {
+      if (ctx.secure) return next();
+  
+      const url = new URL(ctx.request.URL);
+      url.protocol = "https";
+      url.port = String(settings.https.port);
+  
+      ctx.status = 301;
+      ctx.redirect(url.toString());
+  
+      next();
+    });
+  }
 
   app.use(
     koaBody({
