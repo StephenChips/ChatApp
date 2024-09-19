@@ -56,10 +56,10 @@ volumes:
 
 secrets:
   pgpass:
-    file: ./secrets/pgpass
+    file: /run/secrets/pgpass
   tls.cert:
-    file: ./secrets/tls.cert
+    file: /run/secrets/tls.cert
   tls.key:
-    file: ./secrets/tls.key
+    file: /run/secrets/tls.key
   jwt-secret:
-    file: ./secrets/jwt-secret
+    file: /run/secrets/jwt-secret
