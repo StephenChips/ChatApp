@@ -4,6 +4,7 @@ import appUsersReducer, { AppUserThunks, selectLogInToken } from "./appUser";
 import notificationsReducer, { NotificationThunks } from "./notifications";
 import deleteUserDialogReducer from "./deleteUserDialog";
 import appAlertReducer from "./appAlert";
+import messageWindowReducer from "../pages/App/components/MessageWindow/MessageWindow.store";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { initSocket } from "../socket";
 
@@ -14,6 +15,7 @@ export const store = configureStore({
     notifications: notificationsReducer,
     deleteUserDialog: deleteUserDialogReducer,
     appAlert: appAlertReducer,
+    messageWindow: messageWindowReducer,
   },
 });
 

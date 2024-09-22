@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { IconButton, Zoom, Fab } from "@mui/material";
 import { ExpandMore, Close as CloseIcon } from "@mui/icons-material";
 
@@ -15,51 +15,47 @@ import {
 } from "../../../../store/contacts";
 import { useNavigate, useParams } from "react-router";
 import { getSocket } from "../../../../socket";
-import { MessageList } from "./components/MessageList/MessageList";
 import {
-  hasScrolledToBottom,
-  scrollToBottom,
-} from "./components/MessageList/utils";
+  MessageList,
+  MessageListRef,
+} from "./components/MessageList/MessageList";
 import axios from "axios";
 
 import cls from "./MessageWindow.module.css";
+import {
+  addMessageWindow,
+  createInitialMessageWindowState,
+  selectMessageWindowByID,
+  setMessageWindowTextInput,
+} from "./MessageWindow.store";
 
 export function MessageWindow() {
-  const appUser = useAppSelector(selectAppUser);
-  const logInToken = useAppSelector(selectLogInToken);
-
-  const currentContactID = useParams().userID!;
-  const currentContact = useAppSelector((state) =>
-    selectContactByUserID(state, currentContactID),
-  );
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const [textInput, setTextInput] = useState("");
-  const [isScrollToEndButtonVisible, setIsScrollToEndButtonVisible] =
-    useState(false);
+  const currentContactID = useParams().userID!;
+
+  const appUser = useAppSelector(selectAppUser);
+  const logInToken = useAppSelector(selectLogInToken);
+  const currentContact = useAppSelector((state) =>
+    selectContactByUserID(state, currentContactID),
+  );
+  const currentMessageWindowID = `contact-${currentContactID}`;
+  const currentMessageWindow = useAppSelector((state) =>
+    selectMessageWindowByID(state, currentMessageWindowID),
+  );
 
   const currentContactRef = useRef<Contact | null>(null);
-  const messageListElementRef = useRef<HTMLElement | null>(null);
-
   currentContactRef.current = currentContact;
 
-  useEffect(() => {
-    const messageListEl = messageListElementRef.current;
-    if (!messageListEl) return;
+  const messageListRef = useRef<MessageListRef | null>(null);
 
-    const onScroll = () => {
-      if (hasScrolledToBottom(messageListEl)) {
-        setIsScrollToEndButtonVisible(false)
-      } else {
-        setIsScrollToEndButtonVisible(true)
-      }
-    };
-    messageListEl.addEventListener("scroll", onScroll);
-    return () => {
-      messageListEl.removeEventListener("scroll", onScroll);
-    };
-  }, [currentContact]);
+  useEffect(() => {
+    if (currentMessageWindow) return;
+    dispatch(
+      addMessageWindow(createInitialMessageWindowState(currentMessageWindowID)),
+    );
+  }, [dispatch, currentMessageWindow, currentMessageWindowID]);
 
   if (!currentContact) {
     return (
@@ -76,6 +72,10 @@ export function MessageWindow() {
       </div>
     );
   }
+
+  if (!currentMessageWindow) return null;
+
+  const { textInput, hasScrolledToBottom } = currentMessageWindow;
 
   return (
     <div className={cls["message-window"]}>
@@ -95,18 +95,21 @@ export function MessageWindow() {
       </div>
 
       <div className={cls["scroll-to-bottom-fab"]}>
-        <Zoom in={isScrollToEndButtonVisible}>
+        <Zoom in={!hasScrolledToBottom}>
           <Fab
             size="medium"
             color="primary"
-            onClick={() => scrollMessageListToBottom("smooth")}
+            onClick={() => {
+              messageListRef.current?.scrollToBottom();
+            }}
           >
             <ExpandMore />
           </Fab>
         </Zoom>
       </div>
       <MessageList
-        ref={messageListElementRef}
+        ref={messageListRef}
+        messageWindowID={currentMessageWindowID}
         fetchLimits={FETCH_LIMITS}
         messages={currentContact.messages}
         noMoreMessages={currentContact.noMoreMessages}
@@ -139,7 +142,7 @@ export function MessageWindow() {
               limit: FETCH_LIMITS,
             },
           });
-          
+
           return response.data.messages;
         }}
       />
@@ -157,7 +160,12 @@ export function MessageWindow() {
   );
 
   function handleInputtingText(e: React.ChangeEvent<HTMLInputElement>) {
-    setTextInput(e.target.value);
+    dispatch(
+      setMessageWindowTextInput({
+        id: currentMessageWindowID,
+        textInput: e.target.value,
+      }),
+    );
   }
 
   async function handleSendingText(e: React.FormEvent) {
@@ -179,9 +187,14 @@ export function MessageWindow() {
 
     await dispatch(addMessage(msg.recipientID, message));
 
-    setTextInput("");
+    dispatch(
+      setMessageWindowTextInput({
+        id: currentMessageWindowID,
+        textInput: "",
+      }),
+    );
 
-    scrollMessageListToBottom("instant");
+    messageListRef.current?.scrollToBottom();
   }
 
   async function sendMessageToServer(message: unknown) {
@@ -199,11 +212,5 @@ export function MessageWindow() {
 
   function onCloseMessageWindow() {
     navigate("/");
-  }
-
-  function scrollMessageListToBottom(behavior: ScrollBehavior) {
-    if (messageListElementRef.current) {
-      scrollToBottom(messageListElementRef.current, behavior);
-    }
   }
 }

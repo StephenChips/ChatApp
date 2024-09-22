@@ -1,21 +1,30 @@
 import {
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useLayoutEffect,
   useRef,
-  useState,
 } from "react";
 import { Chip, CircularProgress } from "@mui/material";
 import ErrorIcon from "@mui/icons-material/Error";
 
 import { Message, TextMessage } from "../../../../../../store/modeltypes";
-import { useAppSelector } from "../../../../../../store";
+import { useAppDispatch, useAppSelector } from "../../../../../../store";
 import { selectAppUser } from "../../../../../../store/appUser";
 
 import cls from "./MessageList.module.css";
+import {
+  selectMessageWindowByID,
+  setMessageWindowTasksThatRestoreScrollOffset,
+  setMessageWindowScrollOffset,
+  setMessageWindowHasScrolledToBottom,
+  setMessageWindowHasLoadedMessages,
+} from "../../MessageWindow.store";
+import { hasScrolledToBottom } from "./utils";
 
 export type MessageListProps = {
+  messageWindowID: string;
   fetchLimits: number;
   messages: Message[];
   noMoreMessages: boolean;
@@ -24,38 +33,79 @@ export type MessageListProps = {
   onFetchMessages: () => Promise<Message[]>;
 };
 
-export const MessageList = forwardRef<HTMLElement, MessageListProps>(function (
-  props: MessageListProps,
-  ref,
-) {
-  const propsRef = useRef<MessageListProps>(props);
-  const scrollTopRef = useRef<number>(0);
-  const intersectionObserverRef = useRef<IntersectionObserver | null>();
-  const messageListElementRef = useRef<HTMLDivElement>(null);
-  const messageListHeadElementRef = useRef<HTMLDivElement>(null);
-  const [taskThatRestoreScrollPosition, setTaskThatRestoreScrollPosition] =
-    useState<
-      | { previousCanScroll: false }
-      | {
-          previousCanScroll: true;
-          previousFirstMessageID: number;
-          previousFirstMessageOffsetTop: number;
-          previousScrollTop: number;
-        }
-      | null
-    >();
+export type MessageListRef = {
+  scrollToBottom: () => void;
+};
 
-  useImperativeHandle(ref, () => messageListElementRef.current!, []);
+export const MessageList = forwardRef<MessageListRef, MessageListProps>(
+  function (props: MessageListProps, ref) {
+    const dispatch = useAppDispatch();
+    const messageWindowState = useAppSelector((state) =>
+      selectMessageWindowByID(state, props.messageWindowID),
+    );
 
-  propsRef.current = props;
+    const { taskThatRestoreScrollPosition, hasLoadedMessages, scrollOffset } =
+      messageWindowState ?? {};
 
-  const messageRows = props.messages.map((message, index) => {
-    const className = index === 0 ? cls["first"] : "";
-    return <Row message={message} className={className} key={message.id}></Row>;
-  });
+    const propsRef = useRef<MessageListProps>(props);
+    propsRef.current = props;
 
-  useEffect(() => {
-    if (!propsRef.current.noMoreMessages) {
+    const scrollTopRef = useRef<number>(0);
+    const intersectionObserverRef = useRef<IntersectionObserver | null>(null);
+    const messageListElementRef = useRef<HTMLDivElement>(null);
+    const messageListHeadElementRef = useRef<HTMLDivElement>(null);
+
+    useImperativeHandle(ref, () => {
+      return {
+        scrollToBottom() {
+          if (!messageListElementRef.current) return;
+          dispatch(
+            setMessageWindowScrollOffset({
+              id: props.messageWindowID,
+              scrollOffset: messageListElementRef.current!.scrollHeight,
+            }),
+          );
+        },
+      };
+    }, [dispatch, props.messageWindowID]);
+
+    useEffect(() => {
+      if (hasLoadedMessages) return;
+
+      dispatch(
+        setMessageWindowHasLoadedMessages({
+          id: props.messageWindowID,
+          hasLoadedMessages: true,
+        }),
+      );
+
+      dispatch(
+        setMessageWindowScrollOffset({
+          id: props.messageWindowID,
+          scrollOffset: messageListElementRef.current!.scrollHeight,
+        }),
+      );
+
+      dispatch(
+        setMessageWindowHasScrolledToBottom({
+          id: props.messageWindowID,
+          hasScrolledToBottom: true,
+        }),
+      );
+    }, [dispatch, hasLoadedMessages, props.messageWindowID]);
+
+    useEffect(() => {
+      if (!hasLoadedMessages) return;
+      messageListElementRef.current!.scrollTop = scrollOffset;
+    }, [dispatch, hasLoadedMessages, scrollOffset]);
+
+    // Effect that initialize the intersection observer. Inside the observer's handler
+    // we test if users have scroll the list to the top edge, if so, it will load more
+    // history messages into the list.
+    useEffect(() => {
+      if (props.noMoreMessages) return;
+      if (!hasLoadedMessages) return;
+
       intersectionObserverRef.current = new IntersectionObserver(
         async (entries) => {
           const wrapperEl = messageListElementRef.current!;
@@ -72,9 +122,14 @@ export const MessageList = forwardRef<HTMLElement, MessageListProps>(function (
           const moreMessages = await propsRef.current.onFetchMessages();
 
           if (wrapperEl.scrollHeight === wrapperEl.clientHeight) {
-            setTaskThatRestoreScrollPosition({
-              previousCanScroll: false,
-            });
+            dispatch(
+              setMessageWindowTasksThatRestoreScrollOffset({
+                id: props.messageWindowID,
+                task: {
+                  previousCanScroll: false,
+                },
+              }),
+            );
           } else {
             const subPixelPerciseOffsetTop =
               firstMessageEl.getBoundingClientRect().top -
@@ -82,12 +137,17 @@ export const MessageList = forwardRef<HTMLElement, MessageListProps>(function (
               wrapperEl.scrollTop;
 
             // Store necessary information for restoring scroll position after re-render.
-            setTaskThatRestoreScrollPosition({
-              previousCanScroll: true,
-              previousFirstMessageID: propsRef.current.messages[0].id,
-              previousFirstMessageOffsetTop: subPixelPerciseOffsetTop,
-              previousScrollTop: scrollTopRef.current!,
-            });
+            dispatch(
+              setMessageWindowTasksThatRestoreScrollOffset({
+                id: props.messageWindowID,
+                task: {
+                  previousCanScroll: true,
+                  previousFirstMessageID: propsRef.current.messages[0].id,
+                  previousFirstMessageOffsetTop: subPixelPerciseOffsetTop,
+                  previousScrollTop: scrollTopRef.current!,
+                },
+              }),
+            );
           }
 
           if (moreMessages.length < propsRef.current.fetchLimits) {
@@ -109,91 +169,150 @@ export const MessageList = forwardRef<HTMLElement, MessageListProps>(function (
       intersectionObserverRef.current.observe(
         messageListHeadElementRef.current!,
       );
-    }
 
-    return () => {
-      intersectionObserverRef.current?.disconnect();
-      intersectionObserverRef.current = null;
-    };
-  }, []);
+      return () => {
+        intersectionObserverRef.current?.disconnect();
+        intersectionObserverRef.current = null;
+      };
+    }, [
+      dispatch,
+      hasLoadedMessages,
+      props.messageWindowID,
+      props.noMoreMessages,
+    ]);
 
-  useLayoutEffect(() => {
-    if (!taskThatRestoreScrollPosition) return;
-    const messageListEl = messageListElementRef.current!;
-
-    const { previousCanScroll } = taskThatRestoreScrollPosition;
-
-    /**
-     * Corner case:
-     *
-     * If before insertion the message list is too short to
-     * be scrolled, but it become scrollable after insertion,
-     * we should still scroll the list to the bottom, but not
-     * restore the position base on the first messages in the
-     * previous message list. Otherwise we will set the message
-     * list's scroll offset mistakenly.
-     */
-
-    if (previousCanScroll) {
-      const {
-        previousFirstMessageID,
-        previousFirstMessageOffsetTop,
-        previousScrollTop,
-      } = taskThatRestoreScrollPosition;
-
-      const previousFirstMessage = messageListEl.querySelector(
-        `[data-message-id="${previousFirstMessageID}"]`,
-      );
-
-      previousFirstMessage!.scrollIntoView({
-        behavior: "instant",
-        block: "start",
-        inline: "nearest",
-      });
-
-      messageListEl.scrollTop -= previousFirstMessageOffsetTop;
-      messageListEl.scrollTop += previousScrollTop;
-    } else {
-      messageListEl.scrollTop = messageListEl.scrollHeight;
-    }
-
-    if (!props.noMoreMessages) {
-      intersectionObserverRef.current!.observe(
+    useEffect(() => {
+      intersectionObserverRef.current?.observe(
         messageListHeadElementRef.current!,
       );
-    }
 
-    setTaskThatRestoreScrollPosition(null);
-  }, [props.noMoreMessages, taskThatRestoreScrollPosition]);
+      return () => {
+        intersectionObserverRef.current?.disconnect();
+      };
+    }, [props.messages]);
 
-  useLayoutEffect(() => {
-    const messageListEl = messageListElementRef.current!;
-    messageListEl.scrollTop = messageListEl.scrollHeight;
-  }, []);
+    // Effect that restores the scrolling position after loading more history messages.
+    useLayoutEffect(() => {
+      if (!taskThatRestoreScrollPosition) return;
 
-  return (
-    <div className={cls["message-list"]} ref={messageListElementRef}>
+      const messageListEl = messageListElementRef.current!;
+
+      const { previousCanScroll } = taskThatRestoreScrollPosition;
+
+      if (previousCanScroll) {
+        const {
+          previousFirstMessageID,
+          previousFirstMessageOffsetTop,
+          previousScrollTop,
+        } = taskThatRestoreScrollPosition;
+
+        const previousFirstMessage = messageListEl.querySelector(
+          `[data-message-id="${previousFirstMessageID}"]`,
+        );
+
+        previousFirstMessage!.scrollIntoView({
+          behavior: "instant",
+          block: "start",
+          inline: "nearest",
+        });
+
+        messageListEl.scrollTop -= previousFirstMessageOffsetTop;
+        messageListEl.scrollTop += previousScrollTop;
+      } else {
+        // If the list is too short to scroll and after getting
+        // more messages we can scroll it, we should scroll the
+        // list to the bottom.
+        messageListEl.scrollTop = messageListEl.scrollHeight;
+      }
+
+      dispatch(
+        setMessageWindowScrollOffset({
+          id: props.messageWindowID,
+          scrollOffset: messageListEl.scrollTop,
+        }),
+      );
+
+      dispatch(
+        setMessageWindowTasksThatRestoreScrollOffset({
+          id: props.messageWindowID,
+          task: null,
+        }),
+      );
+    }, [dispatch, props.messageWindowID, taskThatRestoreScrollPosition]);
+
+    // After loading new messages (user sends or receives a new message for example),
+    // if the list has been scrolled to bottom before, it should remain at the bottom.
+    //
+    // The ONLY TRUE DEPENDENCY of this effect is `props.messages`. Other dependencies,
+    // even though are used, when they are changed, doesn't cause any state of the view
+    // to be changed. For example, when `props.messageWindowID` is changed, if the list
+    // has been scrolled to the bottom end, it will set the scrolling position to the
+    // bottom end again, which obviously is a no-op, and if it doesn't at the bottom end,
+    // this effect will literally do nothing.
+    useEffect(() => {
+      if (!messageWindowState.hasScrolledToBottom) return;
+      dispatch(
+        setMessageWindowScrollOffset({
+          id: props.messageWindowID,
+          scrollOffset: messageListElementRef.current!.scrollHeight,
+        }),
+      );
+    }, [
+      dispatch,
+      messageWindowState.hasScrolledToBottom,
+      props.messageWindowID,
+      props.messages,
+    ]);
+
+    const onScroll = useCallback(() => {
+      if (!messageListElementRef.current) return;
+      dispatch(
+        setMessageWindowScrollOffset({
+          id: props.messageWindowID,
+          scrollOffset: messageListElementRef.current.scrollTop,
+        }),
+      );
+
+      dispatch(
+        setMessageWindowHasScrolledToBottom({
+          id: props.messageWindowID,
+          hasScrolledToBottom: hasScrolledToBottom(
+            messageListElementRef.current,
+          ),
+        }),
+      );
+    }, [dispatch, props.messageWindowID]);
+
+    const messageRows = props.messages.map((message, index) => {
+      const className = index === 0 ? cls["first"] : "";
+      return (
+        <Row message={message} className={className} key={message.id}></Row>
+      );
+    });
+
+    return (
       <div
-        className={cls["message-list-scroll"]}
-        onScroll={(event) => {
-          scrollTopRef.current = (event.target as Element).scrollTop;
-        }}
+        className={cls["message-list"]}
+        ref={messageListElementRef}
+        onScroll={onScroll}
       >
-        <div
-          className={cls["message-list-head"]}
-          ref={messageListHeadElementRef}
-        >
-          {props.noMoreMessages ? (
-            <Chip label="No more messages" />
-          ) : (
-            <CircularProgress size={20} color="secondary" />
-          )}
+        <div className={cls["message-list-scroll"]}>
+          <div
+            className={cls["message-list-head"]}
+            ref={messageListHeadElementRef}
+          >
+            {props.noMoreMessages ? (
+              <Chip label="No more messages" />
+            ) : (
+              <CircularProgress size={20} color="secondary" />
+            )}
+          </div>
+          {messageRows}
         </div>
-        {messageRows}
       </div>
-    </div>
-  );
-});
+    );
+  },
+);
 
 type TextBubbleProp = {
   message: TextMessage;
