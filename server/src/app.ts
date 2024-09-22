@@ -6,6 +6,7 @@ import * as Koa from "koa";
 import * as Router from "koa-router";
 import * as serve from "koa-static";
 import { koaBody } from "koa-body";
+import * as compress from "koa-compress";
 import * as SocketIO from "socket.io";
 
 import { initDatabasePool, runSQLFile } from "./database";
@@ -28,13 +29,14 @@ async function startApp() {
   console.log("Creating database (if it hasn't been created yet)");
   await runSQLFile(resolve(__dirname, "../sql/init.sql"));
   console.log("Database is created.");
-
   console.log();
-
   console.log("Starting the server");
-  const app = new Koa();
-  const router = new Router();
 
+  const app = new Koa();
+
+  app.use(compress());
+
+  const router = new Router();
   const httpServer = http.createServer(app.callback());
   const httpsServer = httpsEnabled()
     ? https.createServer(
@@ -52,14 +54,14 @@ async function startApp() {
   if (httpsEnabled()) {
     app.use((ctx, next) => {
       if (ctx.secure) return next();
-  
+
       const url = new URL(ctx.request.URL);
       url.protocol = "https";
       url.port = String(settings.https.port);
-  
+
       ctx.status = 301;
       ctx.redirect(url.toString());
-  
+
       next();
     });
   }
