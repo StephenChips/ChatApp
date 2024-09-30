@@ -11,7 +11,7 @@ import "@fontsource/roboto/700.css";
 
 import { router } from "./router";
 import { ThemeProvider } from "@emotion/react";
-import { createTheme } from "@mui/material/styles";
+import { createTheme } from "@mui/material";
 
 async function main() {
   await store.dispatch(initAppStore());

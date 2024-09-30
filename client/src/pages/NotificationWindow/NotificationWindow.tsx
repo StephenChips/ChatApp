@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { Close } from "@mui/icons-material";
-import { Box, Button, IconButton, Typography } from "@mui/material";
+import { Box, Button, IconButton, Theme, Typography, useMediaQuery } from "@mui/material";
 import { useNavigate } from "react-router";
 import { useAppSelector } from "../../store";
 import {
@@ -15,6 +15,7 @@ import { selectAppUser, selectLogInToken } from "../../store/appUser";
 import axios from "axios";
 
 function NotificationItem({ notification }: { notification: Notification }) {
+  const isViewportWiderThanLargeBreakpoint = useMediaQuery((theme: Theme) => theme.breakpoints.up("lg"));
   const appUser = useAppSelector(selectAppUser);
   const logInToken = useAppSelector(selectLogInToken);
   const isNew = !notification.hasRead;
@@ -118,8 +119,8 @@ function NotificationItem({ notification }: { notification: Notification }) {
         bgcolor: "white",
         border: "1px solid gray",
         marginBottom: 2,
-        marginX: 8,
-        marginY: 2,
+        marginX: isViewportWiderThanLargeBreakpoint ? 8 : 2,
+        marginY: 1,
       }}
     >
       <div>

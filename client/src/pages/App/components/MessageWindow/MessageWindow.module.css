@@ -7,7 +7,6 @@
   container-type: inline-size;
   container-name: message-window;
   position: relative;
-  --message-list-width: 70%;
   --horizontal-margin: 147px;
 }
 
@@ -18,20 +17,18 @@
 }
 
 .message-window-header-content {
-  width: var(--message-list-width);
   height: 100%;
   margin: 0 auto;
   display: flex;
   align-items: center;
 }
 
-.message-window-header-content img {
-  width: 40px;
-  height: 40px;
+.message-window-header-content .their-avatar-img {
+  width: 35px;
+  height: 35px;
   border-radius: 20px;
   margin-right: 15px;
 }
-
 .message-window-header-content .their-name {
   font-weight: bold;
 }
@@ -48,8 +45,7 @@
 
   display: flex;
   box-sizing: border-box;
-
-  width: var(--message-list-width);
+  
   margin: 0 auto;
 
   margin-bottom: 15px;
@@ -58,50 +54,15 @@
   overflow: hidden;
 }
 
-.message-inputbox .sending-button {
-  background: var(--primary-theme-color);
-  color: white;
-  border: none;
-  border-left: 2px solid lightgray;
-  height: 100%;
-  flex: 0 0 90px;
-  font-style: italic;
-  font-weight: bold;
-}
-
-.message-inputbox .sending-button[disabled] {
-  color: rgb(200, 220, 237);
-}
-
 .message-inputbox input {
   outline: none;
   border: none;
   padding: 15px;
+  padding-right: 0;
   flex: 1;
   font-size: 18px;
   width: 0;
   /* Overwrite browsers' default width of <input /> elements. */
-}
-
-.scroll-to-bottom-fab {
-  --distance-to-right-border: 80px;
-  position: absolute;
-  right: calc((100% - var(--message-list-width)) / 2 - var(--distance-to-right-border));
-  bottom: 80px;
-}
-
-@container message-window (max-width: 970px) {
-  .message-window-header-content,
-  .message-list,
-  .message-inputbox {
-    width: auto;
-    margin-left: var(--horizontal-margin);
-    margin-right: var(--horizontal-margin);
-  }
-
-  .scroll-to-bottom-fab {
-    right: calc(var(--horizontal-margin) - var(--distance-to-right-border));
-  }
 }
 
 .empty-message-window-prompt {

@@ -1,5 +1,12 @@
 import React, { useEffect, useRef } from "react";
-import { IconButton, Zoom, Fab } from "@mui/material";
+import {
+  IconButton,
+  Zoom,
+  Fab,
+  Theme,
+  useMediaQuery,
+  styled,
+} from "@mui/material";
 import { ExpandMore, Close as CloseIcon } from "@mui/icons-material";
 
 import { useAppDispatch, useAppSelector } from "../../../../store";
@@ -29,9 +36,36 @@ import {
   setMessageWindowTextInput,
 } from "./MessageWindow.store";
 
+const SendingButton = styled("button")(({ theme }) => ({
+  backgroundColor: "transparent",
+  color: theme.palette.primary.main,
+  border: "none",
+  height: "100%",
+  paddingLeft: "10px",
+  paddingRight: "15px",
+  fontStyle: "italic",
+  fontWeight: "bold",
+  cursor: "pointer",
+  "&[disabled]": {
+    color: theme.palette.grey[500],
+  },
+}));
+
 export function MessageWindow() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const isViewportWiderThanLargeBreakpoint = useMediaQuery((theme: Theme) =>
+    theme.breakpoints.up("lg"),
+  );
+  const headerContentWidth = isViewportWiderThanLargeBreakpoint
+    ? "70%"
+    : "calc(100% - 30px)";
+  const messageListWidth = isViewportWiderThanLargeBreakpoint
+    ? "70%"
+    : "calc(100% - 90px)";
+  const messageInputBoxWidth = isViewportWiderThanLargeBreakpoint
+    ? "70%"
+    : "calc(100% - 30px)";
 
   const currentContactID = useParams().userID!;
 
@@ -80,7 +114,10 @@ export function MessageWindow() {
   return (
     <div className={cls["message-window"]}>
       <div className={cls["message-window-header"]}>
-        <div className={cls["message-window-header-content"]}>
+        <div
+          className={cls["message-window-header-content"]}
+          style={{ width: headerContentWidth }}
+        >
           <img
             className={cls["their-avatar-img"]}
             src={currentContact.user.avatarURL}
@@ -94,7 +131,15 @@ export function MessageWindow() {
         </div>
       </div>
 
-      <div className={cls["scroll-to-bottom-fab"]}>
+      <div
+        style={{
+          position: "absolute",
+          right: isViewportWiderThanLargeBreakpoint
+            ? `calc((100% - ${messageListWidth}) / 2 - 80px)`
+            : "15px",
+          bottom: "90px",
+        }}
+      >
         <Zoom in={!hasScrolledToBottom}>
           <Fab
             size="medium"
@@ -109,6 +154,7 @@ export function MessageWindow() {
       </div>
       <MessageList
         ref={messageListRef}
+        width={messageListWidth}
         messageWindowID={currentMessageWindowID}
         fetchLimits={FETCH_LIMITS}
         messages={currentContact.messages}
@@ -146,15 +192,17 @@ export function MessageWindow() {
           return response.data.messages;
         }}
       />
-      <form className={cls["message-inputbox"]} onSubmit={handleSendingText}>
+      <form
+        className={cls["message-inputbox"]}
+        style={{
+          width: messageInputBoxWidth,
+        }}
+        onSubmit={handleSendingText}
+      >
         <input type="text" value={textInput} onChange={handleInputtingText} />
-        <button
-          type="submit"
-          className={cls["sending-button"]}
-          disabled={textInput === ""}
-        >
+        <SendingButton type="submit" disabled={textInput === ""}>
           SEND
-        </button>
+        </SendingButton>
       </form>
     </div>
   );

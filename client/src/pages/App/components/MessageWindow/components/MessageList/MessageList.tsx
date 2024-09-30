@@ -24,6 +24,7 @@ import {
 import { hasScrolledToBottom } from "./utils";
 
 export type MessageListProps = {
+  width: string;
   messageWindowID: string;
   fetchLimits: number;
   messages: Message[];
@@ -296,7 +297,9 @@ export const MessageList = forwardRef<MessageListRef, MessageListProps>(
         ref={messageListElementRef}
         onScroll={onScroll}
       >
-        <div className={cls["message-list-scroll"]}>
+        <div className={cls["message-list-scroll"]} style={{
+          width: props.width
+        }}>
           <div
             className={cls["message-list-head"]}
             ref={messageListHeadElementRef}
