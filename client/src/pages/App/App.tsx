@@ -18,7 +18,9 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  Theme,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
 import { PersonAdd, AccountCircle, Notifications } from "@mui/icons-material";
 import { Outlet, useLocation, useNavigate, type Location } from "react-router";
@@ -68,7 +70,9 @@ function useLocationChange(
 export function App() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-
+  const location = useLocation();
+  const isPhone = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
+  
   useLocationChange(async (previousLocation, currentLocation) => {
     if (previousLocation?.pathname === currentLocation?.pathname) return;
     if (previousLocation?.pathname === "/notifications") {
@@ -106,6 +110,9 @@ export function App() {
     closeAddContactDialog,
   };
 
+  const shouldDisplaySidebar = !isPhone || location.pathname === "/";
+  const shouldDisplayOutlet = !isPhone || !shouldDisplaySidebar;
+
   useEffect(() => {
     document.addEventListener("keydown", closeMessageWindowAfterPressingEscape);
 
@@ -124,8 +131,14 @@ export function App() {
   return (
     <MainPageContext.Provider value={context}>
       <AppAlert style={{ width: "100%", flex: 0 }} />
-      <div className={cls["app"]}>
-        <div className={cls["sidebar"]}>
+      <Box className={cls["app"]}>
+        <Box
+          className={cls["sidebar"]}
+          sx={{
+            flex: isPhone ? "1" : "0 0 300px",
+            display: shouldDisplaySidebar ? "block" : "none",
+          }}
+        >
           <Box display="flex" justifyContent="end" m={2} mb={1}>
             <IconButton
               sx={{ mr: "auto" }}
@@ -154,14 +167,17 @@ export function App() {
           </Box>
 
           <ContactList contacts={contacts} className={cls["contact-list"]} />
-        </div>
+        </Box>
 
-        <Box className={cls["router-outlet-wrapper"]}>
+        <Box
+          className={cls["router-outlet-wrapper"]}
+          display={shouldDisplayOutlet ? "block" : "none"}
+        >
           <Outlet />
         </Box>
         <AddContactDialog />
         <DeleteUserConfirmDialog />
-      </div>
+      </Box>
     </MainPageContext.Provider>
   );
 

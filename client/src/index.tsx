@@ -10,15 +10,19 @@ import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
 
 import { router } from "./router";
+import { ThemeProvider } from "@emotion/react";
+import { createTheme } from "@mui/material/styles";
 
 async function main() {
   await store.dispatch(initAppStore());
 
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
-      <Provider store={store}>
-        <RouterProvider router={router}></RouterProvider>
-      </Provider>
+      <ThemeProvider theme={createTheme()}>
+        <Provider store={store}>
+          <RouterProvider router={router}></RouterProvider>
+        </Provider>
+      </ThemeProvider>
     </React.StrictMode>,
   );
 }
