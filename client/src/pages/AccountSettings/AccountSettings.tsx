@@ -2,7 +2,6 @@ import {
   Box,
   Typography,
   IconButton,
-  Paper,
   List,
   ListItem,
   ListItemButton,
@@ -19,8 +18,15 @@ import {
   Button,
   DialogActions,
   styled,
+  useMediaQuery,
+  Theme,
 } from "@mui/material";
-import { ArrowForward, Close, Delete, Logout } from "@mui/icons-material";
+import {
+  ArrowForward,
+  Close,
+  Delete,
+  Logout,
+} from "@mui/icons-material";
 import { useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../../store";
 import {
@@ -35,6 +41,10 @@ import { AppAlertActions } from "../../store/appAlert";
 import axios from "axios";
 
 export function Account() {
+  const isViewportWiderThanLargeBreakpoint = useMediaQuery((theme: Theme) =>
+    theme.breakpoints.up("lg"),
+  );
+
   const appUser = useAppSelector(selectAppUser);
   const logInToken = useAppSelector(selectLogInToken);
   const navigate = useNavigate();
@@ -62,53 +72,62 @@ export function Account() {
             <Close />
           </IconButton>
         </Box>
-        <Box marginTop={4} width="75%" marginX="auto">
-          <Paper>
-            <List sx={{ width: "100%" }}>
-              <ListItem
-                sx={{ display: "flex", alignItems: "center", marginY: 2 }}
-              >
-                <ListItemAvatar sx={{ marginRight: 2, position: "relative" }}>
-                  <Avatar
-                    src={appUser.avatarURL}
-                    sx={{ height: 60, width: 60, marginLeft: 1 }}
-                  />
-                </ListItemAvatar>
-                <Box>
-                  <Typography variant="h5" display="flex" alignItems="center">
-                    {appUser.name}
-                  </Typography>
-                  <Typography variant="body2" color="gray">
-                    ChatApp ID:&nbsp;
-                    <span style={{ fontWeight: "bold" }}>{appUser.id}</span>
-                  </Typography>
-                </Box>
-              </ListItem>
-              <Divider sx={{ marginY: 1 }} />
-              <ListItemButton onClick={() => setIsChangingUsername(true)}>
-                <ListItemText primary="Change Username" />
-              </ListItemButton>
-              <ListItemButton onClick={() => setIsChangingAvatar(true)}>
-                <ListItemText primary="Change Avatar" />
-              </ListItemButton>
-              <ListItemButton onClick={() => setIsChangingPassword(true)}>
-                <ListItemText primary="Change Password" />
-              </ListItemButton>
-              <ListItemButton
-                onClick={() => {
-                  dispatch(AppUserThunks.logOut(null));
-                }}
-              >
-                <ListItemIcon>
-                  <Logout />
-                </ListItemIcon>
-                <ListItemText primary="Logout" />
-              </ListItemButton>
-            </List>
-          </Paper>
+        <Box
+          sx={{
+            marginTop: isViewportWiderThanLargeBreakpoint ? 4 : 2,
+            width: isViewportWiderThanLargeBreakpoint
+              ? `500px`
+              : "min(95%, 500px)",
+            marginX: "auto",
+            borderRadius: 2,
+            background: (theme: Theme) => theme.palette.background.paper,
+          }}
+        >
+          <List sx={{ width: "100%" }}>
+            <ListItem
+              sx={{ display: "flex", alignItems: "center", marginY: 2 }}
+            >
+              <ListItemAvatar sx={{ marginRight: 2, position: "relative" }}>
+                <Avatar
+                  src={appUser.avatarURL}
+                  sx={{ height: 60, width: 60, marginLeft: 1 }}
+                />
+              </ListItemAvatar>
+              <Box>
+                <Typography variant="h5" display="flex" alignItems="center">
+                  {appUser.name}
+                </Typography>
+                <Typography variant="body2" color="gray">
+                  ChatApp ID:&nbsp;
+                  <span style={{ fontWeight: "bold" }}>{appUser.id}</span>
+                </Typography>
+              </Box>
+            </ListItem>
+            <Divider sx={{ marginY: 1 }} />
+            <ListItemButton onClick={() => setIsChangingUsername(true)}>
+              <ListItemText primary="Change Username" />
+            </ListItemButton>
+            <ListItemButton onClick={() => setIsChangingAvatar(true)}>
+              <ListItemText primary="Change Avatar" />
+            </ListItemButton>
+            <ListItemButton onClick={() => setIsChangingPassword(true)}>
+              <ListItemText primary="Change Password" />
+            </ListItemButton>
+            <ListItemButton
+              onClick={() => {
+                dispatch(AppUserThunks.logOut(null));
+              }}
+            >
+              <ListItemIcon>
+                <Logout />
+              </ListItemIcon>
+              <ListItemText primary="Logout" />
+            </ListItemButton>
+          </List>
         </Box>
       </Box>
       <ChangeUsernameDialog
+        fullScreen={!isViewportWiderThanLargeBreakpoint}
         open={isChangingUsername}
         onSubmit={onSubmitUsernameChanged}
         onClose={() => {
@@ -116,6 +135,7 @@ export function Account() {
         }}
       />
       <ChangePasswordDialog
+        fullScreen={!isViewportWiderThanLargeBreakpoint}
         open={isChangingPassword}
         onSubmit={onSubmitPasswordChanged}
         onClose={() => {
@@ -123,6 +143,7 @@ export function Account() {
         }}
       />
       <ChangeAvatarDialog
+        fullScreen={!isViewportWiderThanLargeBreakpoint}
         open={isChangingAvatar}
         onSubmit={onSubmitAvatarChanged}
         onClose={() => {
@@ -157,17 +178,19 @@ export function Account() {
   async function onSubmitPasswordChanged(newPassword: string) {
     setIsChangingPassword(false);
     try {
-       await axios("/api/setUserPassword", {
+      await axios("/api/setUserPassword", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${logInToken}`
+          Authorization: `Bearer ${logInToken}`,
         },
-        data: { password: newPassword }
+        data: { password: newPassword },
       });
-      dispatch(AppUserThunks.logOut({
-        type: "password has changed",
-        userID: appUser!.id
-      }));
+      dispatch(
+        AppUserThunks.logOut({
+          type: "password has changed",
+          userID: appUser!.id,
+        }),
+      );
     } catch {
       dispatch(
         AppAlertActions.show({
@@ -206,10 +229,12 @@ function ChangeUsernameDialog({
   open,
   onSubmit: $onSubmit,
   onClose,
+  fullScreen,
 }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (newUsername: string) => void;
+  fullScreen: boolean;
 }) {
   const appUser = useAppSelector(selectAppUser)!;
   const [userNameTextFieldValue, setUsernameTextFieldValue] = useState("");
@@ -225,6 +250,7 @@ function ChangeUsernameDialog({
       onClose={onClose}
       maxWidth="sm"
       fullWidth
+      fullScreen={fullScreen}
       PaperProps={{
         component: "form",
         onSubmit: (event: React.FormEvent<HTMLFormElement>) => {
@@ -278,10 +304,12 @@ function ChangePasswordDialog({
   open,
   onClose,
   onSubmit: $onSubmit,
+  fullScreen,
 }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (newPassword: string) => void;
+  fullScreen: boolean;
 }) {
   const [showError, setShowError] = useState(false);
   const [newPassword, setNewPassword] = useState("");
@@ -300,6 +328,7 @@ function ChangePasswordDialog({
       onClose={onClose}
       maxWidth="sm"
       fullWidth
+      fullScreen={fullScreen}
       PaperProps={{
         component: "form",
         onSubmit: (event: React.FormEvent<HTMLFormElement>) => {
@@ -365,10 +394,12 @@ function ChangeAvatarDialog({
   open,
   onClose,
   onSubmit: $onSubmit,
+  fullScreen,
 }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (newAvatarSource: AvatarSource) => void;
+  fullScreen: boolean;
 }) {
   const acceptedFileMIME = ["image/png", "image/jpeg"];
   const appUser = useAppSelector(selectAppUser);
@@ -428,7 +459,13 @@ function ChangeAvatarDialog({
   });
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      fullScreen={fullScreen}
+    >
       <DialogTitle>Change Avatar</DialogTitle>
       <DialogContent>
         <Box display="flex" justifyContent="space-around" alignItems="center">
