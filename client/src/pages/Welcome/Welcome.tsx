@@ -9,6 +9,7 @@ import {
   IconButton,
   styled,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
 import { RADIAL_GRADIENT_BACKGROUND } from "../../constants";
 import { ArrowForward, Delete, Edit } from "@mui/icons-material";
@@ -19,6 +20,7 @@ import { useEffect, useState } from "react";
 import { User } from "../../store/modeltypes";
 import { useNavigate } from "react-router";
 import axios from "axios";
+import { useTheme } from "@mui/material";
 
 type AvatarSource =
   | { from: "url"; url: string }
@@ -28,7 +30,7 @@ export function Welcome() {
   const dispatch = useAppDispatch();
   const appUser = useAppSelector(selectAppUser);
   const [cardBeingDisplayed, displayCard] = useState<
-    "welcome-card" | "change-avatar"
+    "welcome-card" | "change-avatar-card"
   >("welcome-card");
 
   let component: JSX.Element;
@@ -50,7 +52,7 @@ export function Welcome() {
     component = (
       <WelcomeCard
         user={appUser}
-        onChangeAvatar={() => displayCard("change-avatar")}
+        onChangeAvatar={() => displayCard("change-avatar-card")}
       />
     );
   } else {
@@ -91,10 +93,22 @@ function WelcomeCard({
   user: User;
   onChangeAvatar: () => void;
 }) {
+  const theme = useTheme();
+  const isViewportWiderThanSmallBreakpoint = useMediaQuery(
+    theme.breakpoints.up("sm"),
+  );
   const navigate = useNavigate();
 
+  const cardStyle = isViewportWiderThanSmallBreakpoint
+    ? { width: "600px" }
+    : {
+        width: "100%",
+        height: "100%",
+        borderRadius: 0,
+      };
+
   return (
-    <Card sx={{ width: "400px" }}>
+    <Card sx={cardStyle}>
       <CardHeader title="Welcome"></CardHeader>
       <CardContent>
         <Typography marginBottom={2}>
@@ -162,6 +176,10 @@ function ChangeAvatarCard({
   onClose: () => void;
   defaultAvatarURLs: string[];
 }) {
+  const theme = useTheme();
+  const isViewportWiderThanSmallBreakpoint = useMediaQuery(
+    theme.breakpoints.up("sm"),
+  );
   const acceptedFileMIME = ["image/png", "image/jpeg"];
   const appUser = useAppSelector(selectAppUser);
   const [uploadErrorString, setUploadErrorString] = useState("");
@@ -195,8 +213,16 @@ function ChangeAvatarCard({
     );
   });
 
+  const cardStyle = isViewportWiderThanSmallBreakpoint
+    ? { width: "600px" }
+    : {
+        width: "100%",
+        height: "100%",
+        borderRadius: 0,
+      };
+
   return (
-    <Card sx={{ width: "600px" }}>
+    <Card sx={cardStyle}>
       <CardHeader title="Change Avatar" />
       <CardContent>
         <Box display="flex" justifyContent="space-around" alignItems="center">
@@ -427,7 +453,7 @@ const VisuallyHiddenInput = styled("input")({
 });
 
 async function fetchDefaultAvatars() {
-  type Response = { url: string }[]
+  type Response = { url: string }[];
   const response = await axios.post<Response>("/api/getDefaultAvatars");
   return response.data.map(({ url }) => url);
 }

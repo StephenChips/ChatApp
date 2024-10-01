@@ -3,10 +3,12 @@ import {
   AlertColor,
   Box,
   Button,
-  Card,
   Checkbox,
   TextField,
+  Theme,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { NavigateEffect } from "../../components/NavigateEffect";
 import { useState } from "react";
@@ -24,6 +26,10 @@ const CHATAPP_ID_INPUT_ELEMENT_ID = "chatapp-id";
 const PASSWORD_INPUT_ELEMENT_ID = "password";
 
 export function LogIn() {
+  const theme = useTheme();
+  const isViewportWiderThanSmallBreakpoint = useMediaQuery((theme: Theme) =>
+    theme.breakpoints.up("sm"),
+  );
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const hasLoggedIn = useAppSelector(selectHasLoggedIn);
@@ -52,30 +58,42 @@ export function LogIn() {
     return <NavigateEffect to="/" />;
   }
 
+  let loginFormStyle;
+
+  if (isViewportWiderThanSmallBreakpoint) {
+    loginFormStyle = {
+      width: "500px",
+      height: "500px",
+      position: "absolute",
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      margin: "auto",
+      display: "flex",
+      flexDirection: "column",
+      background: theme.palette.background.paper,
+      borderRadius: 4,
+    }
+  } else {
+    loginFormStyle = {
+      display: "flex",
+      flexDirection: "column",
+      height: "100%"
+    }
+  }
+  
   return (
     <Box
       sx={{
         width: "100%",
         height: "100%",
-        background: RADIAL_GRADIENT_BACKGROUND,
+        background: isViewportWiderThanSmallBreakpoint ? RADIAL_GRADIENT_BACKGROUND : undefined,
         position: "relative",
       }}
     >
-      <Card
-        elevation={3}
-        sx={{
-          width: "50%",
-          height: "430px",
-          maxWidth: "600px",
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: 0,
-          bottom: 0,
-          margin: "auto",
-          display: "flex",
-          flexDirection: "column",
-        }}
+      <Box
+        sx={loginFormStyle}
       >
         <Alert
           severity={alertContent?.severity}
@@ -159,7 +177,7 @@ export function LogIn() {
             Sign Up
           </Button>
         </Box>
-      </Card>
+      </Box>
     </Box>
   );
 

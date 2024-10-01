@@ -3,11 +3,12 @@ import {
   AlertColor,
   Box,
   Button,
-  Card,
   LinearProgress,
   Snackbar,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import axios from "axios";
 import { RADIAL_GRADIENT_BACKGROUND } from "../../constants";
@@ -18,6 +19,10 @@ import { useAppDispatch } from "../../store";
 import { AppUserThunks } from "../../store/appUser";
 
 export function SignUp() {
+  const theme = useTheme();
+  const isViewportWiderThanSmallBreakpoint = useMediaQuery(
+    theme.breakpoints.up("sm"),
+  );
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -56,10 +61,36 @@ export function SignUp() {
     }, 2000);
   }, [snackbarState]);
 
+  let signUpFormStyle;
+
+  if (isViewportWiderThanSmallBreakpoint) {
+    signUpFormStyle = {
+      boxSizing: "border-box",
+      display: "flex",
+      flexDirection: "column",
+      width: "500px",
+      height: "500px",
+      background: theme.palette.background.paper,
+      borderRadius: 4,
+      padding: 3,
+    };
+  } else {
+    signUpFormStyle = {
+      display: "flex",
+      flexDirection: "column",
+      boxSizing: "border-box",
+      width: "100%",
+      height: "100%",
+      padding: 3,
+    };
+  }
+
   return (
     <Box
       sx={{
-        background: RADIAL_GRADIENT_BACKGROUND,
+        background: isViewportWiderThanSmallBreakpoint
+          ? RADIAL_GRADIENT_BACKGROUND
+          : undefined,
         width: "100%",
         height: "100%",
         display: "flex",
@@ -67,102 +98,96 @@ export function SignUp() {
         alignItems: "center",
       }}
     >
-      <Card
-        sx={{
-          width: "513px",
-        }}
-      >
-        <Box sx={{ margin: 3 }} component="form" onSubmit={onCreateAccount}>
-          <Typography variant="h5" marginBottom={5}>
-            Sign Up
-          </Typography>
-          <TextField
-            required
-            label="Username"
-            variant="outlined"
-            fullWidth
-            sx={{
-              marginBottom: 2,
-            }}
-            value={username}
-            onChange={(e) => {
-              setUsername(e.target.value);
-              e.target.setCustomValidity("");
-            }}
-            onInvalid={(e) => {
-              const el = e.target as HTMLInputElement;
-              el.setCustomValidity("Please enter your username.");
-            }}
-          />
-          <PasswordField
-            error={passwordError !== null}
-            required
-            label="Password"
-            variant="outlined"
-            sx={{ marginBottom: 2 }}
-            fullWidth
-            value={password}
-            onChange={(e) => {
-              setPasswordError(null);
-              setPassword(e.target.value);
-              e.target.setCustomValidity("");
-            }}
-            onInvalid={(e) => {
-              const el = e.target as HTMLInputElement;
-              el.setCustomValidity("Please enter your password.");
-            }}
-            helperText={passwordError}
-          />
-          <PasswordField
-            error={passwordConfirmationError !== null}
-            required
-            label="Enter the password again"
-            variant="outlined"
-            sx={{
-              marginBottom: 4,
-            }}
-            fullWidth
-            value={passwordConfirmation}
-            onChange={(e) => {
-              setPasswordConfirmationError(null);
-              setPasswordConfirmation(e.target.value);
-              e.target.setCustomValidity("");
-            }}
-            onInvalid={(e) => {
-              const el = e.target as HTMLInputElement;
-              el.setCustomValidity("Please enter your password again.");
-            }}
-            helperText={passwordConfirmationError}
-          />
+      <Box component="form" sx={signUpFormStyle} onSubmit={onCreateAccount}>
+        <Typography variant="h5" marginBottom="auto">
+          Sign Up
+        </Typography>
+        <TextField
+          required
+          label="Username"
+          variant="outlined"
+          fullWidth
+          sx={{
+            marginBottom: 2,
+          }}
+          value={username}
+          onChange={(e) => {
+            setUsername(e.target.value);
+            e.target.setCustomValidity("");
+          }}
+          onInvalid={(e) => {
+            const el = e.target as HTMLInputElement;
+            el.setCustomValidity("Please enter your username.");
+          }}
+        />
+        <PasswordField
+          error={passwordError !== null}
+          required
+          label="Password"
+          variant="outlined"
+          sx={{ marginBottom: 2 }}
+          fullWidth
+          value={password}
+          onChange={(e) => {
+            setPasswordError(null);
+            setPassword(e.target.value);
+            e.target.setCustomValidity("");
+          }}
+          onInvalid={(e) => {
+            const el = e.target as HTMLInputElement;
+            el.setCustomValidity("Please enter your password.");
+          }}
+          helperText={passwordError}
+        />
+        <PasswordField
+          error={passwordConfirmationError !== null}
+          required
+          label="Enter the password again"
+          variant="outlined"
+          sx={{
+            marginBottom: 4,
+          }}
+          fullWidth
+          value={passwordConfirmation}
+          onChange={(e) => {
+            setPasswordConfirmationError(null);
+            setPasswordConfirmation(e.target.value);
+            e.target.setCustomValidity("");
+          }}
+          onInvalid={(e) => {
+            const el = e.target as HTMLInputElement;
+            el.setCustomValidity("Please enter your password again.");
+          }}
+          helperText={passwordConfirmationError}
+        />
 
-          {isCreatingAccount ? (
-            <>
-              <LinearProgress sx={{ marginBottom: "10px" }} />
-              <Typography variant="body2" textAlign="center" display="block">
-                Your account is being created. Please don't leave this page.
-              </Typography>
-            </>
-          ) : (
-            <>
-              <Button
-                fullWidth
-                type="submit"
-                variant={isCreatingAccount ? "text" : "contained"}
-                sx={{ marginBottom: "10px" }}
-              >
-                Create Account
-              </Button>
-              <Button
-                fullWidth
-                onClick={() => navigate("/log-in")}
-                disabled={isCreatingAccount}
-              >
-                Cancel
-              </Button>
-            </>
-          )}
-        </Box>
-      </Card>
+        {isCreatingAccount ? (
+          <>
+            <LinearProgress sx={{ marginBottom: "10px" }} />
+            <Typography variant="body2" textAlign="center" display="block">
+              Your account is being created. Please don't leave this page.
+            </Typography>
+          </>
+        ) : (
+          <>
+            <Button
+              fullWidth
+              type="submit"
+              variant={isCreatingAccount ? "text" : "contained"}
+              sx={{ marginBottom: "10px" }}
+            >
+              Create Account
+            </Button>
+            <Button
+              fullWidth
+              onClick={() => navigate("/log-in")}
+              disabled={isCreatingAccount}
+            >
+              Cancel
+            </Button>
+          </>
+        )}
+      </Box>
       <Snackbar
         open={snackbarState === "visible"}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
@@ -207,9 +232,14 @@ export function SignUp() {
     setIsCreatingAccount(true);
 
     try {
-      const response = await axios.post("/api/createUser", { name: username, password });
+      const response = await axios.post("/api/createUser", {
+        name: username,
+        password,
+      });
       const userID = response.data.id;
-      await dispatch(AppUserThunks.logIn({ userID, password, rememberMe: false }));
+      await dispatch(
+        AppUserThunks.logIn({ userID, password, rememberMe: false }),
+      );
       navigate("/welcome");
     } catch (e) {
       const error = e as Error;
