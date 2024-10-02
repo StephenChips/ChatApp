@@ -53,7 +53,6 @@ let appSettings : AppSettings;
 export function getSettingsFilePath() {
   const ROOT_DIR = path.resolve(__dirname, "../");
   const filepath = path.resolve(ROOT_DIR, cliOptions.settingsFile ?? "./settings.ts");
-  console.log(filepath)
   return filepath;
 }
 
