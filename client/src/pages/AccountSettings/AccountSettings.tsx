@@ -34,6 +34,7 @@ import React, { useEffect, useState } from "react";
 import { PasswordField } from "../../components/PasswordField";
 import { AppAlertActions } from "../../store/appAlert";
 import axios from "axios";
+import { createAvatarFromBlob } from "../utils";
 
 export function Account() {
   const isViewportWiderThanLargeBreakpoint = useMediaQuery((theme: Theme) =>
@@ -405,7 +406,7 @@ function ChangeAvatarDialog({
   );
 
   const [uploadedImage, setUploadedImage] = useState<{
-    file: File;
+    file: Blob;
     objectURL: string;
   } | null>(null);
 
@@ -534,13 +535,13 @@ function ChangeAvatarDialog({
                 src={uploadedImage.objectURL}
                 onClick={() =>
                   setSelectedAvatar({
-                    from: "uploaded-image",
-                    imageFile: uploadedImage.file,
+                    from: "blob",
+                    blob: uploadedImage.file,
                   })
                 }
                 isSelected={
                   selectedAvatar !== null &&
-                  selectedAvatar.from === "uploaded-image"
+                  selectedAvatar.from === "blob"
                 }
               />
             </Box>
@@ -608,7 +609,7 @@ function ChangeAvatarDialog({
     $onSubmit(selectedAvatar);
   }
 
-  function onFileUploaded(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onFileUploaded(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.item(0);
 
     if (!file) {
@@ -621,11 +622,11 @@ function ChangeAvatarDialog({
       return;
     }
 
-    setSelectedAvatar({ from: "uploaded-image", imageFile: file });
-
+    const blob = await createAvatarFromBlob(file, 200);
+    setSelectedAvatar({ from: "blob", blob });
     setUploadedImage({
-      file,
-      objectURL: URL.createObjectURL(file),
+      file: blob,
+      objectURL: URL.createObjectURL(blob),
     });
   }
 

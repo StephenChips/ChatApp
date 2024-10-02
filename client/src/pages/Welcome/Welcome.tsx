@@ -14,17 +14,14 @@ import {
 import { RADIAL_GRADIENT_BACKGROUND } from "../../constants";
 import { ArrowForward, Delete, Edit } from "@mui/icons-material";
 import { NavigateEffect } from "../../components/NavigateEffect";
-import { AppUserThunks, selectAppUser } from "../../store/appUser";
+import { AppUserThunks, AvatarSource, selectAppUser } from "../../store/appUser";
 import { useAppDispatch, useAppSelector } from "../../store";
 import { useEffect, useState } from "react";
 import { User } from "../../store/modeltypes";
 import { useNavigate } from "react-router";
 import axios from "axios";
 import { useTheme } from "@mui/material";
-
-type AvatarSource =
-  | { from: "url"; url: string }
-  | { from: "uploaded-image"; imageFile: File };
+import { createAvatarFromBlob } from "../utils";
 
 export function Welcome() {
   const dispatch = useAppDispatch();
@@ -189,7 +186,7 @@ function ChangeAvatarCard({
   );
 
   const [uploadedImage, setUploadedImage] = useState<{
-    file: File;
+    file: Blob;
     objectURL: string;
   } | null>(null);
 
@@ -296,13 +293,13 @@ function ChangeAvatarCard({
                 src={uploadedImage.objectURL}
                 onClick={() =>
                   setSelectedAvatar({
-                    from: "uploaded-image",
-                    imageFile: uploadedImage.file,
+                    from: "blob",
+                    blob: uploadedImage.file,
                   })
                 }
                 isSelected={
                   selectedAvatar !== null &&
-                  selectedAvatar.from === "uploaded-image"
+                  selectedAvatar.from === "blob"
                 }
               />
             </Box>
@@ -369,7 +366,7 @@ function ChangeAvatarCard({
     onChangeAvatar(selectedAvatar);
   }
 
-  function onFileUploaded(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onFileUploaded(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.item(0);
 
     if (!file) {
@@ -382,11 +379,11 @@ function ChangeAvatarCard({
       return;
     }
 
-    setSelectedAvatar({ from: "uploaded-image", imageFile: file });
-
+    const blob = await createAvatarFromBlob(file, 200);
+    setSelectedAvatar({ from: "blob", blob });
     setUploadedImage({
-      file,
-      objectURL: URL.createObjectURL(file),
+      file: blob,
+      objectURL: URL.createObjectURL(blob),
     });
   }
 

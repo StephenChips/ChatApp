@@ -24,7 +24,7 @@ function decodeJWT(token: string) {
 
 export type AvatarSource =
   | { from: "url"; url: string }
-  | { from: "uploaded-image"; imageFile: File };
+  | { from: "blob"; blob: Blob };
 
 export type LogOutReason = {
   type: "password has changed";
@@ -212,11 +212,11 @@ export const AppUserThunks = {
       if (avatarSource.from === "url") {
         formData.append("url", avatarSource.url);
       } else {
-        formData.append("imageFile", avatarSource.imageFile);
+        formData.append("imageFile", avatarSource.blob);
       }
 
       try {
-        const { data }: { data: { url: string } } = await axios(
+        const response = await axios(
           "/api/setUserAvatar",
           {
             method: "POST",
@@ -225,7 +225,14 @@ export const AppUserThunks = {
           },
         );
 
-        dispatch(appUser.actions.setAppUserAvatarURL(data.url));
+        // It is very likely `response.data.url` is the same as the old
+        // avatar URL. Although the hyperlink itself doesn't change, the
+        // image it references to has changed, so to successfully trigger
+        // a UI update we have to append an dummy querystring to the URL
+        // so that after updating  the new URL is different from the old
+        // one.
+        const newAvatarURL = response.data.url + `?t=${Date.now()}`;
+        dispatch(appUser.actions.setAppUserAvatarURL(newAvatarURL));
       } catch (e) {
         console.error(e);
         const error = e as AxiosError;
