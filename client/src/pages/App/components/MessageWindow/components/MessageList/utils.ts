@@ -10,11 +10,14 @@ export const createInitialListState = ({
   noMoreMessages: false,
 });
 
-export function scrollToBottom(element: Element, behavior: ScrollBehavior = "instant") {
+export function scrollToBottom(
+  element: Element,
+  behavior: ScrollBehavior = "instant",
+) {
   element.scrollTo({
     left: 0,
     top: element.scrollHeight,
-    behavior
+    behavior,
   });
 }
 

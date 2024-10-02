@@ -72,7 +72,7 @@ export function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const isPhone = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
-  
+
   useLocationChange(async (previousLocation, currentLocation) => {
     if (previousLocation?.pathname === currentLocation?.pathname) return;
     if (previousLocation?.pathname === "/notifications") {

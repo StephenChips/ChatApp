@@ -1,11 +1,17 @@
 import { format } from "date-fns";
 import { Close } from "@mui/icons-material";
-import { Box, Button, IconButton, Theme, Typography, useMediaQuery, useTheme } from "@mui/material";
+import {
+  Box,
+  Button,
+  IconButton,
+  Theme,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 import { useNavigate } from "react-router";
 import { useAppSelector } from "../../store";
-import {
-  selectAllNotifications,
-} from "../../store/notifications";
+import { selectAllNotifications } from "../../store/notifications";
 import {
   AddContactRequestNotification,
   Notification,
@@ -16,7 +22,9 @@ import axios from "axios";
 
 function NotificationItem({ notification }: { notification: Notification }) {
   const theme = useTheme();
-  const isViewportWiderThanLargeBreakpoint = useMediaQuery((theme: Theme) => theme.breakpoints.up("lg"));
+  const isViewportWiderThanLargeBreakpoint = useMediaQuery((theme: Theme) =>
+    theme.breakpoints.up("lg"),
+  );
   const appUser = useAppSelector(selectAppUser);
   const logInToken = useAppSelector(selectLogInToken);
   const isNew = !notification.hasRead;

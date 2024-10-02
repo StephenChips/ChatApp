@@ -21,12 +21,7 @@ import {
   useMediaQuery,
   Theme,
 } from "@mui/material";
-import {
-  ArrowForward,
-  Close,
-  Delete,
-  Logout,
-} from "@mui/icons-material";
+import { ArrowForward, Close, Delete, Logout } from "@mui/icons-material";
 import { useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../../store";
 import {

@@ -17,7 +17,7 @@ type Image = {
 type CommonMessageProps = {
   id: number;
   senderID: User["id"];
-  recipientID: User["id"],
+  recipientID: User["id"];
   status: "succeeded" | "sending" | "failed";
   sentAt: string; // UTC time in ISO string format.
 };
@@ -36,13 +36,13 @@ export type Contact = {
 type CommonNotificationProps = {
   id: number;
   createdAt: string; // UTC time in ISO format
-  hasRead: boolean,
+  hasRead: boolean;
 };
 
 export type RequestStatus = "agreed" | "rejected" | "pending" | "expired";
 
 export type AddContactRequest = {
-  id: number,
+  id: number;
   fromUser: User;
   toUser: User;
   requestStatus: RequestStatus;

@@ -71,26 +71,26 @@ const store = createSlice({
     setMessageWindowTextInput(
       state,
       {
-        payload: { id, textInput }
+        payload: { id, textInput },
       }: PayloadAction<{
-        id: MessageWindowState["id"],
-        textInput: MessageWindowState["textInput"]
-      }>
+        id: MessageWindowState["id"];
+        textInput: MessageWindowState["textInput"];
+      }>,
     ) {
-      state.entities[id].textInput = textInput
+      state.entities[id].textInput = textInput;
     },
 
     setMessageWindowHasLoadedMessages(
       state,
       {
-        payload: { id, hasLoadedMessages }
+        payload: { id, hasLoadedMessages },
       }: PayloadAction<{
-        id: MessageWindowState["id"],
-        hasLoadedMessages: MessageWindowState["hasLoadedMessages"]
-      }>
+        id: MessageWindowState["id"];
+        hasLoadedMessages: MessageWindowState["hasLoadedMessages"];
+      }>,
     ) {
       state.entities[id].hasLoadedMessages = hasLoadedMessages;
-    }
+    },
   },
 });
 

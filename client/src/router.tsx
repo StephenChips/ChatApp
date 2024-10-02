@@ -14,7 +14,7 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <MessageWindow />
+        element: <MessageWindow />,
       },
       {
         path: "/contact/:userID/chat",

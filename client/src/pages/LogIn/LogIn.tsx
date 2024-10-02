@@ -74,27 +74,27 @@ export function LogIn() {
       flexDirection: "column",
       background: theme.palette.background.paper,
       borderRadius: 4,
-    }
+    };
   } else {
     loginFormStyle = {
       display: "flex",
       flexDirection: "column",
-      height: "100%"
-    }
+      height: "100%",
+    };
   }
-  
+
   return (
     <Box
       sx={{
         width: "100%",
         height: "100%",
-        background: isViewportWiderThanSmallBreakpoint ? RADIAL_GRADIENT_BACKGROUND : undefined,
+        background: isViewportWiderThanSmallBreakpoint
+          ? RADIAL_GRADIENT_BACKGROUND
+          : undefined,
         position: "relative",
       }}
     >
-      <Box
-        sx={loginFormStyle}
-      >
+      <Box sx={loginFormStyle}>
         <Alert
           severity={alertContent?.severity}
           sx={alertContent === null ? { display: "none" } : {}}

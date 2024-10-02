@@ -231,14 +231,14 @@ export function AddContactDialog() {
   }
 
   async function onClickAddToContactButton() {
-     await axios("/api/createAddContactRequest", {
+    await axios("/api/createAddContactRequest", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${logInToken}`
+        Authorization: `Bearer ${logInToken}`,
       },
       data: {
-        recipientID: searchedUserID
-      }
+        recipientID: searchedUserID,
+      },
     });
 
     closeThisDialog();
