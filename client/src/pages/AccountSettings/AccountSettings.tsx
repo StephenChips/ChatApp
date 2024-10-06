@@ -17,11 +17,10 @@ import {
   TextField,
   Button,
   DialogActions,
-  styled,
   useMediaQuery,
   Theme,
 } from "@mui/material";
-import { ArrowForward, Close, Delete, Logout } from "@mui/icons-material";
+import { Close, Logout } from "@mui/icons-material";
 import { useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../../store";
 import {
@@ -34,11 +33,11 @@ import React, { useEffect, useState } from "react";
 import { PasswordField } from "../../components/PasswordField";
 import { AppAlertActions } from "../../store/appAlert";
 import axios from "axios";
-import { createAvatarFromBlob } from "../utils";
+import { ChangeAvatarDialog } from "../../components/ChangeAvatarDialog";
 
 export function Account() {
-  const isViewportWiderThanLargeBreakpoint = useMediaQuery((theme: Theme) =>
-    theme.breakpoints.up("lg"),
+  const isViewportWiderThanSmallBreakpoint = useMediaQuery((theme: Theme) =>
+    theme.breakpoints.up("sm"),
   );
 
   const appUser = useAppSelector(selectAppUser);
@@ -70,8 +69,8 @@ export function Account() {
         </Box>
         <Box
           sx={{
-            marginTop: isViewportWiderThanLargeBreakpoint ? 4 : 2,
-            width: isViewportWiderThanLargeBreakpoint
+            marginTop: isViewportWiderThanSmallBreakpoint ? 4 : 2,
+            width: isViewportWiderThanSmallBreakpoint
               ? `500px`
               : "min(95%, 500px)",
             marginX: "auto",
@@ -123,7 +122,7 @@ export function Account() {
         </Box>
       </Box>
       <ChangeUsernameDialog
-        fullScreen={!isViewportWiderThanLargeBreakpoint}
+        fullScreen={!isViewportWiderThanSmallBreakpoint}
         open={isChangingUsername}
         onSubmit={onSubmitUsernameChanged}
         onClose={() => {
@@ -131,7 +130,7 @@ export function Account() {
         }}
       />
       <ChangePasswordDialog
-        fullScreen={!isViewportWiderThanLargeBreakpoint}
+        fullScreen={!isViewportWiderThanSmallBreakpoint}
         open={isChangingPassword}
         onSubmit={onSubmitPasswordChanged}
         onClose={() => {
@@ -139,7 +138,7 @@ export function Account() {
         }}
       />
       <ChangeAvatarDialog
-        fullScreen={!isViewportWiderThanLargeBreakpoint}
+        fullScreen={!isViewportWiderThanSmallBreakpoint}
         open={isChangingAvatar}
         onSubmit={onSubmitAvatarChanged}
         onClose={() => {
@@ -384,316 +383,4 @@ function ChangePasswordDialog({
       </DialogContent>
     </Dialog>
   );
-}
-
-function ChangeAvatarDialog({
-  open,
-  onClose,
-  onSubmit: $onSubmit,
-  fullScreen,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (newAvatarSource: AvatarSource) => void;
-  fullScreen: boolean;
-}) {
-  const acceptedFileMIME = ["image/png", "image/jpeg"];
-  const appUser = useAppSelector(selectAppUser);
-  const [uploadErrorString, setUploadErrorString] = useState("");
-
-  const [selectedAvatar, setSelectedAvatar] = useState<AvatarSource | null>(
-    null,
-  );
-
-  const [uploadedImage, setUploadedImage] = useState<{
-    file: Blob;
-    objectURL: string;
-  } | null>(null);
-
-  const [defaultAvatars, setDefaultAvatars] = useState<string[]>([]);
-
-  useEffect(() => {
-    if (open) return;
-    // Run this effect when the dialog's closed (or before closing).
-
-    setSelectedAvatar(null);
-    deleteUploadedImage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
-  useEffect(() => {
-    (async () => {
-      const imageSources = await fetchDefaultAvatars();
-      setDefaultAvatars(imageSources);
-    })();
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (uploadedImage) URL.revokeObjectURL(uploadedImage.objectURL);
-    };
-  }, [uploadedImage]);
-
-  const avatarElements = defaultAvatars.map((avatarURL, index) => {
-    return (
-      <AvatarButton
-        key={index}
-        src={avatarURL}
-        isSelected={
-          selectedAvatar !== null &&
-          selectedAvatar.from === "url" &&
-          selectedAvatar.url === avatarURL
-        }
-        onClick={() => {
-          setSelectedAvatar({
-            from: "url",
-            url: avatarURL,
-          });
-        }}
-      />
-    );
-  });
-
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      fullScreen={fullScreen}
-    >
-      <DialogTitle>Change Avatar</DialogTitle>
-      <DialogContent>
-        <Box display="flex" justifyContent="space-around" alignItems="center">
-          <Box>
-            <Avatar
-              src={appUser?.avatarURL}
-              sx={{ width: 66, height: 66, marginX: "auto", marginBottom: 1 }}
-            ></Avatar>
-            <Typography variant="body2">Current Avatar</Typography>
-          </Box>
-
-          <ArrowForward />
-          {selectedAvatar ? (
-            (() => {
-              const url =
-                selectedAvatar.from === "url"
-                  ? selectedAvatar.url
-                  : uploadedImage!.objectURL;
-
-              return (
-                <Box>
-                  <Avatar
-                    src={url}
-                    sx={{
-                      width: 66,
-                      height: 66,
-                      marginX: "auto",
-                      marginBottom: 1,
-                    }}
-                  ></Avatar>
-                  <Typography variant="body2">New Avatar</Typography>
-                </Box>
-              );
-            })()
-          ) : (
-            <Typography variant="body2" textAlign="center">
-              New Avatar <br />
-              (You haven't select one yet.)
-            </Typography>
-          )}
-        </Box>
-        <DialogContentText marginTop={2}>Default Avatars</DialogContentText>
-        <Box
-          display="flex"
-          gap="15px"
-          marginTop={1}
-          marginX="auto"
-          flexWrap="wrap"
-        >
-          {avatarElements}
-        </Box>
-        <DialogContentText marginTop={3}>
-          {uploadedImage ? "Uploaded Image" : "Upload"}
-        </DialogContentText>
-        {uploadedImage ? (
-          <Box
-            sx={{
-              padding: 2,
-              marginTop: 2,
-              backgroundColor: "#EFEFEF",
-              borderRadius: 4,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              width: "150px",
-              marginX: "auto",
-            }}
-          >
-            <Box marginRight={1}>
-              <AvatarButton
-                src={uploadedImage.objectURL}
-                onClick={() =>
-                  setSelectedAvatar({
-                    from: "blob",
-                    blob: uploadedImage.file,
-                  })
-                }
-                isSelected={
-                  selectedAvatar !== null &&
-                  selectedAvatar.from === "blob"
-                }
-              />
-            </Box>
-            <IconButton onClick={deleteUploadedImage}>
-              <Delete />
-            </IconButton>
-          </Box>
-        ) : (
-          <Box
-            sx={{
-              width: "100%",
-              height: "150px",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              borderRadius: 3,
-              borderStyle: "dashed",
-              borderColor: "primary.main",
-              borderWidth: 3,
-              boxSizing: "border-box",
-              marginTop: 1,
-            }}
-          >
-            <Box>
-              Drop your image file here or
-              <Button
-                variant="outlined"
-                component="label"
-                sx={{ marginLeft: 1 }}
-              >
-                UPLOAD
-                <VisuallyHiddenInput
-                  type="file"
-                  accept={acceptedFileMIME.join(",")}
-                  onChange={onFileUploaded}
-                />
-              </Button>
-              <Typography
-                variant="body2"
-                color="red"
-                marginTop={2}
-                display={uploadErrorString === "" ? "none" : "block"}
-              >
-                {uploadErrorString}
-              </Typography>
-            </Box>
-          </Box>
-        )}
-      </DialogContent>
-      <DialogActions>
-        <Button
-          onClick={onClickChangeAvatarButton}
-          disabled={selectedAvatar === null}
-        >
-          Change
-        </Button>
-        <Button onClick={onClose}>Close</Button>
-      </DialogActions>
-    </Dialog>
-  );
-
-  async function onClickChangeAvatarButton() {
-    if (!selectedAvatar) return;
-
-    $onSubmit(selectedAvatar);
-  }
-
-  async function onFileUploaded(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.item(0);
-
-    if (!file) {
-      setUploadErrorString("You didn't select a file to upload");
-      return;
-    }
-
-    if (!acceptedFileMIME.includes(file.type)) {
-      setUploadErrorString("Please select a JPEG or a PNG image to upload.");
-      return;
-    }
-
-    const blob = await createAvatarFromBlob(file, 200);
-    setSelectedAvatar({ from: "blob", blob });
-    setUploadedImage({
-      file: blob,
-      objectURL: URL.createObjectURL(blob),
-    });
-  }
-
-  function deleteUploadedImage() {
-    if (!uploadedImage) return;
-    URL.revokeObjectURL(uploadedImage.objectURL);
-    setUploadedImage(null);
-    setSelectedAvatar(null);
-  }
-}
-
-// A hidden input for providing file uploading and is designed to be
-// called by other components or HTML elements.
-const VisuallyHiddenInput = styled("input")({
-  clip: "rect(0 0 0 0)",
-  clipPath: "inset(50%)",
-  height: 1,
-  overflow: "hidden",
-  position: "absolute",
-  bottom: 0,
-  left: 0,
-  whiteSpace: "nowrap",
-  width: 1,
-});
-
-function AvatarButton({
-  onClick,
-  isSelected,
-  src,
-}: {
-  onClick: () => void;
-  isSelected: boolean;
-  src: string;
-}) {
-  return (
-    <Box
-      onClick={onClick}
-      sx={{
-        display: "inline-flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "6px",
-        width: "66px",
-        height: "66px",
-        borderWidth: isSelected ? "3px" : 0,
-        borderStyle: "solid",
-        borderColor: isSelected ? "primary.main" : undefined,
-        borderRadius: "33px",
-        boxSizing: "border-box",
-        cursor: "pointer",
-        background: "white",
-        transition: "border-width 100ms ease-in-out",
-      }}
-    >
-      <Avatar
-        src={src}
-        sx={{
-          width: "100%",
-          height: "100%",
-        }}
-      ></Avatar>
-    </Box>
-  );
-}
-
-async function fetchDefaultAvatars() {
-  type Response = { url: string }[];
-  const response = await axios.post<Response>("/api/getDefaultAvatars");
-  return response.data.map(({ url }) => url);
 }
