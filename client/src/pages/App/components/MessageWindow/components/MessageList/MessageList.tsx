@@ -265,25 +265,6 @@ export const MessageList = forwardRef<MessageListRef, MessageListProps>(
       props.messages,
     ]);
 
-    const onScroll = useCallback(() => {
-      if (!messageListElementRef.current) return;
-      dispatch(
-        setMessageWindowScrollOffset({
-          id: props.messageWindowID,
-          scrollOffset: messageListElementRef.current.scrollTop,
-        }),
-      );
-
-      dispatch(
-        setMessageWindowHasScrolledToBottom({
-          id: props.messageWindowID,
-          hasScrolledToBottom: hasScrolledToBottom(
-            messageListElementRef.current,
-          ),
-        }),
-      );
-    }, [dispatch, props.messageWindowID]);
-
     const messageRows = props.messages.map((message, index) => {
       const className = index === 0 ? cls["first"] : "";
       return (
@@ -317,6 +298,26 @@ export const MessageList = forwardRef<MessageListRef, MessageListProps>(
         </div>
       </div>
     );
+
+    function onScroll() {
+      if (!messageListElementRef.current) return;
+      console.log(hasScrolledToBottom(messageListElementRef.current))
+      dispatch(
+        setMessageWindowScrollOffset({
+          id: props.messageWindowID,
+          scrollOffset: messageListElementRef.current.scrollTop,
+        }),
+      );
+
+      dispatch(
+        setMessageWindowHasScrolledToBottom({
+          id: props.messageWindowID,
+          hasScrolledToBottom: hasScrolledToBottom(
+            messageListElementRef.current,
+          ),
+        }),
+      );
+    }
   },
 );
 
